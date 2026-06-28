@@ -1,0 +1,54 @@
+/**
+ * Typography scale — tight headlines, refined body, wide labels
+ */
+
+:root {
+  --font-display: var(--font-geist-sans);
+  --font-body: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Display — hero / editorial */
+  --text-display-xl-size: clamp(3rem, 7vw + 1rem, 5.5rem);
+  --text-display-xl-leading: 1.05;
+  --text-display-xl-tracking: -0.03em;
+
+  --text-display-lg-size: clamp(2.5rem, 5vw + 0.75rem, 4rem);
+  --text-display-lg-leading: 1.08;
+  --text-display-lg-tracking: -0.025em;
+
+  /* Headings */
+  --text-heading-xl-size: 2.25rem;
+  --text-heading-xl-leading: 1.15;
+  --text-heading-xl-tracking: -0.02em;
+
+  --text-heading-lg-size: 1.875rem;
+  --text-heading-lg-leading: 1.2;
+  --text-heading-lg-tracking: -0.015em;
+
+  --text-heading-md-size: 1.375rem;
+  --text-heading-md-leading: 1.25;
+  --text-heading-md-tracking: -0.01em;
+
+  --text-heading-sm-size: 1.125rem;
+  --text-heading-sm-leading: 1.3;
+  --text-heading-sm-tracking: -0.005em;
+
+  /* Body */
+  --text-body-lg-size: 1.25rem;
+  --text-body-lg-leading: 1.65;
+
+  --text-body-md-size: 1.0625rem;
+  --text-body-md-leading: 1.6;
+
+  --text-body-sm-size: 0.9375rem;
+  --text-body-sm-leading: 1.55;
+
+  /* Labels — readable section tags */
+  --text-label-size: 0.8125rem;
+  --text-label-leading: 1.4;
+  --text-label-tracking: 0.1em;
+
+  --text-caption-size: 0.875rem;
+  --text-caption-leading: 1.45;
+  --text-caption-tracking: 0.01em;
+}

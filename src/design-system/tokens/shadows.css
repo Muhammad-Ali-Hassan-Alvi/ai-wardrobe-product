@@ -1,0 +1,45 @@
+/**
+ * Shadow system — soft, layered, never harsh
+ */
+
+:root {
+  --shadow-xs: 0 1px 2px oklch(0.17 0.012 85 / 4%);
+  --shadow-sm:
+    0 1px 3px oklch(0.17 0.012 85 / 6%),
+    0 1px 2px oklch(0.17 0.012 85 / 4%);
+  --shadow-md:
+    0 4px 12px oklch(0.17 0.012 85 / 6%),
+    0 2px 4px oklch(0.17 0.012 85 / 4%);
+  --shadow-lg:
+    0 12px 32px oklch(0.17 0.012 85 / 8%),
+    0 4px 8px oklch(0.17 0.012 85 / 4%);
+  --shadow-xl:
+    0 24px 48px oklch(0.17 0.012 85 / 10%),
+    0 8px 16px oklch(0.17 0.012 85 / 5%);
+  --shadow-float:
+    0 20px 40px oklch(0.17 0.012 85 / 8%),
+    0 0 0 1px oklch(0.17 0.012 85 / 4%);
+  --shadow-glow: 0 0 40px var(--champagne-glow);
+  --shadow-inner-soft: inset 0 1px 0 oklch(1 0 0 / 60%);
+}
+
+.dark {
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 20%);
+  --shadow-sm:
+    0 1px 3px oklch(0 0 0 / 24%),
+    0 1px 2px oklch(0 0 0 / 16%);
+  --shadow-md:
+    0 4px 12px oklch(0 0 0 / 28%),
+    0 2px 4px oklch(0 0 0 / 16%);
+  --shadow-lg:
+    0 12px 32px oklch(0 0 0 / 32%),
+    0 4px 8px oklch(0 0 0 / 16%);
+  --shadow-xl:
+    0 24px 48px oklch(0 0 0 / 36%),
+    0 8px 16px oklch(0 0 0 / 20%);
+  --shadow-float:
+    0 20px 40px oklch(0 0 0 / 32%),
+    0 0 0 1px oklch(1 0 0 / 8%);
+  --shadow-glow: 0 0 48px var(--champagne-glow);
+  --shadow-inner-soft: inset 0 1px 0 oklch(1 0 0 / 8%);
+}

@@ -1,0 +1,52 @@
+import { createEnv } from "@t3-oss/env-nextjs";
+import { clientEnvSchema, serverEnvSchema } from "./schema";
+
+export const env = createEnv({
+  server: serverEnvSchema,
+  client: clientEnvSchema,
+  runtimeEnv: {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    AI_PROVIDER: process.env.AI_PROVIDER,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    TRYON_PROVIDER: process.env.TRYON_PROVIDER,
+    GEMINI_TRYON_MODEL: process.env.GEMINI_TRYON_MODEL,
+    FAL_TRYON_MODEL: process.env.FAL_TRYON_MODEL,
+    ALLOW_TRYON_COMPOSITE_FALLBACK: process.env.ALLOW_TRYON_COMPOSITE_FALLBACK,
+    FAL_API_KEY: process.env.FAL_API_KEY,
+    REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
+    TRYON_WEBHOOK_SECRET: process.env.TRYON_WEBHOOK_SECRET,
+    STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+    AWS_S3_REGION: process.env.AWS_S3_REGION,
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+  },
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  emptyStringAsUndefined: true,
+});
+
+export type Env = typeof env;

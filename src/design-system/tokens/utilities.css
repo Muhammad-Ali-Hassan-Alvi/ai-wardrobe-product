@@ -1,0 +1,224 @@
+/**
+ * Design system utility classes
+ */
+
+@layer utilities {
+  /* Glassmorphism surfaces */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-subtle);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur-strong));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+    border: 1px solid var(--glass-border-subtle);
+    box-shadow: var(--shadow-soft-sm);
+  }
+
+  .surface-raised {
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .surface-float {
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-float);
+  }
+
+  .shadow-soft-xs {
+    box-shadow: var(--shadow-xs);
+  }
+  .shadow-soft-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-soft-md {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-soft-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  .shadow-soft-xl {
+    box-shadow: var(--shadow-xl);
+  }
+  .shadow-soft-float {
+    box-shadow: var(--shadow-float);
+  }
+  .shadow-soft-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Typography utilities — size/weight only; use text-* for color */
+  .text-display-xl {
+    font-family: var(--font-display);
+    font-size: var(--text-display-xl-size);
+    line-height: var(--text-display-xl-leading);
+    letter-spacing: var(--text-display-xl-tracking);
+    font-weight: 700;
+  }
+
+  .text-display-lg {
+    font-family: var(--font-display);
+    font-size: var(--text-display-lg-size);
+    line-height: var(--text-display-lg-leading);
+    letter-spacing: var(--text-display-lg-tracking);
+    font-weight: 700;
+  }
+
+  .text-heading-xl {
+    font-size: var(--text-heading-xl-size);
+    line-height: var(--text-heading-xl-leading);
+    letter-spacing: var(--text-heading-xl-tracking);
+    font-weight: 700;
+  }
+
+  .text-heading-lg {
+    font-size: var(--text-heading-lg-size);
+    line-height: var(--text-heading-lg-leading);
+    letter-spacing: var(--text-heading-lg-tracking);
+    font-weight: 700;
+  }
+
+  .text-heading-md {
+    font-size: var(--text-heading-md-size);
+    line-height: var(--text-heading-md-leading);
+    letter-spacing: var(--text-heading-md-tracking);
+    font-weight: 600;
+  }
+
+  .text-heading-sm {
+    font-size: var(--text-heading-sm-size);
+    line-height: var(--text-heading-sm-leading);
+    letter-spacing: var(--text-heading-sm-tracking);
+    font-weight: 600;
+  }
+
+  .text-body-lg {
+    font-size: var(--text-body-lg-size);
+    line-height: var(--text-body-lg-leading);
+    font-weight: 500;
+  }
+
+  .text-body-md {
+    font-size: var(--text-body-md-size);
+    line-height: var(--text-body-md-leading);
+    font-weight: 500;
+  }
+
+  .text-body-sm {
+    font-size: var(--text-body-sm-size);
+    line-height: var(--text-body-sm-leading);
+    font-weight: 500;
+  }
+
+  .text-label {
+    font-size: var(--text-label-size);
+    line-height: var(--text-label-leading);
+    letter-spacing: var(--text-label-tracking);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .text-caption {
+    font-size: var(--text-caption-size);
+    line-height: var(--text-caption-leading);
+    letter-spacing: var(--text-caption-tracking);
+    font-weight: 500;
+  }
+
+  .text-gradient-champagne {
+    color: var(--champagne-foreground);
+    background: linear-gradient(
+      135deg,
+      oklch(0.38 0.1 85) 0%,
+      oklch(0.52 0.11 85) 50%,
+      oklch(0.32 0.08 85) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @supports not (background-clip: text) {
+    .text-gradient-champagne {
+      -webkit-text-fill-color: unset;
+      color: var(--champagne-foreground);
+      background: none;
+    }
+  }
+
+  /* Primary buttons — force light label (tailwind-merge / Link can strip text-white) */
+  [data-slot="fashion-button"][data-variant="primary"] {
+    color: #ffffff !important;
+  }
+
+  [data-slot="fashion-button"][data-variant="destructive"] {
+    color: #ffffff !important;
+  }
+
+  /* Ambient page background — soft white with champagne glow */
+  .page-ambient {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 20% -10%,
+        var(--champagne-glow),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 90% 20%,
+        oklch(0.95 0.02 85 / 60%),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 70% 50% at 50% 100%,
+        oklch(0.96 0.015 85 / 80%),
+        transparent 55%
+      );
+  }
+
+  /* Glass panel with soft shadow — no hard borders */
+  .glass-panel {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur-strong));
+    -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+    border: 1px solid var(--glass-border-subtle);
+    box-shadow: var(--shadow-float);
+  }
+
+  /* Shimmer for skeletons */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--muted) 0%,
+      oklch(from var(--muted) calc(l + 0.04) c h) 50%,
+      var(--muted) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Focus ring — refined */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}

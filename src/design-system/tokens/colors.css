@@ -1,0 +1,86 @@
+/**
+ * AI Wardrobe — Color Tokens
+ * White luxury theme + champagne accent. Always light mode for product UI.
+ */
+
+:root {
+  /* Core palette — high-contrast on white */
+  --background: oklch(0.998 0.002 85);
+  --foreground: oklch(0.12 0.02 85);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0.02 85);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0.02 85);
+
+  --primary: oklch(0.14 0.02 85);
+  --primary-foreground: oklch(0.99 0.002 85);
+
+  --secondary: oklch(0.96 0.004 85);
+  --secondary-foreground: oklch(0.18 0.018 85);
+
+  --muted: oklch(0.955 0.004 85);
+  --muted-foreground: oklch(0.32 0.018 85);
+
+  --accent: oklch(0.96 0.006 85);
+  --accent-foreground: oklch(0.14 0.02 85);
+
+  --destructive: oklch(0.577 0.22 25);
+
+  --border: oklch(0.9 0.006 85);
+  --input: oklch(0.92 0.006 85);
+  --ring: oklch(0.65 0.05 85);
+
+  /* Fashion accent — readable gold on white */
+  --champagne: oklch(0.52 0.11 85);
+  --champagne-muted: oklch(0.94 0.03 85);
+  --champagne-foreground: oklch(0.28 0.07 85);
+  --champagne-glow: oklch(0.78 0.07 85 / 14%);
+
+  /* Semantic surfaces */
+  --surface-base: oklch(0.998 0.002 85);
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.97 0.004 85);
+  --surface-overlay: oklch(1 0 0 / 94%);
+
+  /* Glassmorphism — frosted white panels */
+  --glass-bg: oklch(1 0 0 / 62%);
+  --glass-bg-strong: oklch(1 0 0 / 82%);
+  --glass-border: oklch(1 0 0 / 80%);
+  --glass-border-subtle: oklch(0.2 0.014 85 / 7%);
+  --glass-blur: 24px;
+  --glass-blur-strong: 40px;
+
+  /* Sidebar */
+  --sidebar: oklch(0.99 0.002 85);
+  --sidebar-foreground: oklch(0.2 0.014 85);
+  --sidebar-primary: oklch(0.22 0.016 85);
+  --sidebar-primary-foreground: oklch(0.99 0.002 85);
+  --sidebar-accent: oklch(0.96 0.006 85);
+  --sidebar-accent-foreground: oklch(0.28 0.014 85);
+  --sidebar-border: oklch(0.9 0.006 85);
+  --sidebar-ring: oklch(0.65 0.05 85);
+
+  /* Charts */
+  --chart-1: oklch(0.62 0.09 85);
+  --chart-2: oklch(0.55 0.06 85);
+  --chart-3: oklch(0.45 0.04 85);
+  --chart-4: oklch(0.75 0.06 85);
+  --chart-5: oklch(0.58 0.1 75);
+}
+
+/* Dark tokens kept for reference — product UI forces light mode */
+.dark {
+  --background: oklch(0.998 0.002 85);
+  --foreground: oklch(0.12 0.02 85);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0.02 85);
+  --primary: oklch(0.14 0.02 85);
+  --primary-foreground: oklch(0.99 0.002 85);
+  --muted: oklch(0.955 0.004 85);
+  --muted-foreground: oklch(0.32 0.018 85);
+  --glass-bg: oklch(1 0 0 / 62%);
+  --glass-bg-strong: oklch(1 0 0 / 82%);
+  --glass-border-subtle: oklch(0.2 0.014 85 / 7%);
+}
