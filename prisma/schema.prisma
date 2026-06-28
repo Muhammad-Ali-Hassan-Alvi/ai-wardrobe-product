@@ -1,0 +1,81 @@
+// PostgreSQL via Supabase — DATABASE_URL (pooled) + DIRECT_URL (migrations)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UploadSlot {
+  USER_PHOTO
+  DRESS
+  SHOES
+  ACCESSORIES
+}
+
+enum OutfitStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  authId    String?  @unique
+  sessionId String?  @unique
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uploads Upload[]
+  outfits Outfit[]
+
+  @@index([sessionId])
+  @@index([authId])
+}
+
+model Upload {
+  id                 String     @id @default(cuid())
+  userId             String
+  slot               UploadSlot
+  cloudinaryPublicId String
+  secureUrl          String
+  width              Int?
+  height             Int?
+  format             String?
+  bytes              Int?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slot])
+  @@index([userId])
+}
+
+model Outfit {
+  id             String       @id @default(cuid())
+  userId         String
+  status         OutfitStatus @default(PENDING)
+  score          Int?
+  title          String?
+  explanation    String?
+  highlights     Json?
+  colorPalette   Json?
+  resultImageUrl String?
+  resultPublicId String?
+  aiProvider     String?
+  processingMs   Int?
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
+}

@@ -39,14 +39,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
+# prisma (keep schema + seed in git; ignore local sqlite if any)
 /prisma/*.db
 /prisma/*.db-journal
 
-# IDE
-.idea
-.vscode
-
-//generated
+# generated Prisma client (built on postinstall / build)
 /src/generated
-/prisma
