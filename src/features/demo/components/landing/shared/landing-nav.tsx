@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, Menu, Settings, X } from "lucide-react";
 import { FashionNavBar } from "@/design-system";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useSession } from "@/components/providers";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { LANDING_NAV_ITEMS } from "@/shared/constants/nav-items";
@@ -43,10 +51,38 @@ function getNavLinkClass(pathname: string, href: string, extra?: string) {
 }
 
 export function LandingNav() {
+  const router = useRouter();
   const pathname = usePathname();
-  const { user, isLoading } = useSession();
+  const { user, isLoading, signOut } = useSession();
   const initials = getUserInitials(user?.name, user?.email);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openProfileMenu = () => {
+    if (profileCloseTimer.current) {
+      clearTimeout(profileCloseTimer.current);
+      profileCloseTimer.current = null;
+    }
+    setProfileOpen(true);
+  };
+
+  const closeProfileMenu = () => {
+    profileCloseTimer.current = setTimeout(() => setProfileOpen(false), 120);
+  };
+
+  const handleSignOut = async () => {
+    setProfileOpen(false);
+    await signOut();
+    router.push(APP_ROUTES.login);
+    router.refresh();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (profileCloseTimer.current) clearTimeout(profileCloseTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -122,14 +158,56 @@ export function LandingNav() {
           </Button>
 
           {!isLoading && user ? (
-            <Link
-              href={APP_ROUTES.dashboard}
-              title={user.name ?? user.email ?? "Account"}
-              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold tracking-wide text-background shadow-soft-sm transition hover:opacity-90"
-              aria-label={`${user.name ?? "Account"} — open dashboard`}
+            <div
+              className="relative"
+              onMouseEnter={openProfileMenu}
+              onMouseLeave={closeProfileMenu}
             >
-              {initials}
-            </Link>
+              <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen} modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold tracking-wide text-background shadow-soft-sm transition hover:opacity-90"
+                    aria-label={`${user.name ?? "Account"} menu`}
+                    aria-haspopup="menu"
+                    aria-expanded={profileOpen}
+                    onClick={() => setProfileOpen((open) => !open)}
+                  >
+                    {initials}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={10}
+                  className="w-48"
+                  onMouseEnter={openProfileMenu}
+                  onMouseLeave={closeProfileMenu}
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="text-sm font-medium">{user.name ?? "Account"}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push(APP_ROUTES.settings);
+                    }}
+                  >
+                    <Settings className="size-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="size-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
             <>
               <LandingOutlineLink
@@ -167,6 +245,26 @@ export function LandingNav() {
             <div className="grid gap-1">
               {LANDING_NAV_ITEMS.map((item) => renderNavLink(item, "mobile"))}
             </div>
+
+            {!isLoading && user && (
+              <div className="mt-3 grid gap-2 border-t border-border/60 pt-3 md:hidden">
+                <LandingOutlineLink href={APP_ROUTES.settings} size="pill">
+                  <Settings className="size-4" strokeWidth={1.5} />
+                  Settings
+                </LandingOutlineLink>
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void handleSignOut();
+                  }}
+                >
+                  <LogOut className="size-4" strokeWidth={1.5} />
+                  Logout
+                </button>
+              </div>
+            )}
 
             {!isLoading && !user && (
               <div className="mt-3 grid gap-2 border-t border-border/60 pt-3 sm:hidden">
