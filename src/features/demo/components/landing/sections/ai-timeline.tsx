@@ -2,7 +2,14 @@
 
 import { useRef } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import {
+  Eye,
+  Palette,
+  ScanSearch,
+  Upload,
+  Wand2,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Caption,
   FashionContainer,
@@ -12,6 +19,14 @@ import {
 import { ease } from "@/design-system/motion";
 import { AI_TIMELINE_STEPS } from "../../../constants/landing-images";
 import { SectionReveal } from "../shared/section-reveal";
+
+const TIMELINE_ICONS: Record<(typeof AI_TIMELINE_STEPS)[number]["id"], LucideIcon> = {
+  upload: Upload,
+  analyze: ScanSearch,
+  style: Palette,
+  generate: Wand2,
+  preview: Eye,
+};
 
 export function AiTimelineSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +84,8 @@ function TimelineStep({
   active: boolean;
   align: "left" | "right";
 }) {
+  const StepIcon = TIMELINE_ICONS[step.id];
+
   return (
     <motion.div
       initial={{ opacity: 0, x: align === "left" ? -24 : 24 }}
@@ -103,7 +120,7 @@ function TimelineStep({
           repeatDelay: 3,
         }}
       >
-        <Sparkles className="size-4 text-champagne" strokeWidth={1.5} />
+        <StepIcon className="size-4 text-champagne" strokeWidth={1.5} />
       </motion.div>
 
       {/* Content */}

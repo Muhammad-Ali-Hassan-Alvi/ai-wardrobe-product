@@ -134,9 +134,9 @@
     color: var(--champagne-foreground);
     background: linear-gradient(
       135deg,
-      oklch(0.38 0.1 85) 0%,
-      oklch(0.52 0.11 85) 50%,
-      oklch(0.32 0.08 85) 100%
+      oklch(from var(--champagne-foreground) calc(l - 0.08) c h) 0%,
+      var(--champagne) 50%,
+      oklch(from var(--champagne-foreground) calc(l + 0.05) c h) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -160,25 +160,151 @@
     color: #ffffff !important;
   }
 
-  /* Ambient page background — soft white with champagne glow */
+  /* Ambient page background — theme pinks, no brown */
   .page-ambient {
     background-color: var(--background);
     background-image:
       radial-gradient(
-        ellipse 80% 50% at 20% -10%,
+        ellipse 85% 55% at 15% -5%,
         var(--champagne-glow),
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 65% 45% at 92% 18%,
+        var(--theme-glow-accent),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 75% 55% at 50% 105%,
+        var(--theme-glow-bottom),
+        transparent 58%
+      );
+  }
+
+  /* Dashboard — cool lavender workspace */
+  .page-ambient-dashboard {
+    background-color: var(--page-dashboard-bg);
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 10% -8%,
+        var(--page-dashboard-glow-a),
         transparent 55%
       ),
       radial-gradient(
-        ellipse 60% 40% at 90% 20%,
-        oklch(0.95 0.02 85 / 60%),
+        ellipse 60% 45% at 95% 12%,
+        var(--page-dashboard-glow-b),
         transparent 50%
       ),
       radial-gradient(
-        ellipse 70% 50% at 50% 100%,
-        oklch(0.96 0.015 85 / 80%),
+        ellipse 70% 50% at 50% 108%,
+        var(--page-dashboard-glow-c),
         transparent 55%
       );
+  }
+
+  /* Studio — warm peach-rose creative space */
+  .page-ambient-studio {
+    background-color: var(--page-studio-bg);
+    background-image:
+      radial-gradient(
+        ellipse 85% 55% at 18% -5%,
+        var(--page-studio-glow-a),
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 65% 45% at 88% 20%,
+        var(--page-studio-glow-b),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 75% 55% at 50% 105%,
+        var(--page-studio-glow-c),
+        transparent 58%
+      );
+  }
+
+  /* Shared width for landing navbar + footer (matches floating nav insets) */
+  .landing-chrome-shell {
+    width: min(80rem, calc(100vw - 1.5rem));
+    margin-inline: auto;
+  }
+
+  @media (min-width: 640px) {
+    .landing-chrome-shell {
+      width: min(80rem, calc(100vw - 2rem));
+    }
+  }
+
+  @media (min-width: 768px) {
+    .landing-chrome-shell {
+      width: min(80rem, calc(100vw - 3rem));
+    }
+  }
+
+  .landing-nav-shell {
+    background: var(--landing-nav-bg) !important;
+    border-color: var(--landing-nav-border) !important;
+    box-shadow:
+      0 8px 32px oklch(0.7 0.08 340 / 12%),
+      0 2px 8px oklch(0.75 0.06 350 / 8%) !important;
+    overflow: hidden;
+  }
+
+  .landing-nav-mobile-panel {
+    background: var(--landing-nav-bg);
+    border: 1px solid var(--landing-nav-border);
+    box-shadow:
+      0 12px 40px oklch(0.7 0.08 340 / 14%),
+      0 4px 12px oklch(0.75 0.06 350 / 8%);
+  }
+
+  .landing-nav-link-dashboard {
+    color: var(--page-dashboard-accent);
+  }
+
+  .landing-nav-link-dashboard.is-active {
+    background: var(--page-dashboard-accent-bg);
+    font-weight: 600;
+  }
+
+  .landing-nav-link-dashboard:hover {
+    background: var(--page-dashboard-glow-a);
+  }
+
+  .landing-nav-link-studio {
+    color: var(--page-studio-accent);
+  }
+
+  .landing-nav-link-studio.is-active {
+    background: var(--page-studio-accent-bg);
+    font-weight: 600;
+  }
+
+  .landing-nav-link-studio:hover {
+    background: var(--page-studio-glow-a);
+  }
+
+  .nav-sidebar-dashboard {
+    background: var(--page-dashboard-accent-bg) !important;
+    color: var(--page-dashboard-accent) !important;
+  }
+
+  .nav-sidebar-studio {
+    background: var(--page-studio-accent-bg) !important;
+    color: var(--page-studio-accent) !important;
+  }
+
+  .landing-footer-shell {
+    background: var(--landing-footer-bg);
+    border: 1px solid var(--landing-footer-border);
+    box-shadow:
+      0 12px 40px oklch(0.7 0.08 340 / 10%),
+      0 4px 12px oklch(0.75 0.06 350 / 6%);
+  }
+
+  .landing-footer-inner {
+    background: oklch(from var(--landing-footer-bg) calc(l + 0.01) c h / 80%);
+    border-color: var(--landing-footer-border);
   }
 
   /* Glass panel with soft shadow — no hard borders */

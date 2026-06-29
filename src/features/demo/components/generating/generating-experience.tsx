@@ -77,7 +77,7 @@ export function GeneratingExperience() {
   };
 
   return (
-    <div className="page-ambient flex min-h-screen flex-col items-center justify-center px-6">
+    <div className="page-ambient-studio flex min-h-screen flex-col items-center justify-center px-6">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}

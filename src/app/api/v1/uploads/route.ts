@@ -36,10 +36,20 @@ export async function POST(request: Request) {
     }
 
     const slot = SLOT_MAP[slotKey];
-    if (!slot) return apiError("Invalid slot");
+    if (!slot && slotKey !== "auto") return apiError("Invalid slot");
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const studio = StudioService.create();
+
+    if (slotKey === "auto") {
+      const upload = await studio.uploadGarmentWithAi(
+        userId,
+        buffer,
+        file.type || "image/jpeg",
+      );
+      return apiSuccess({ upload });
+    }
+
     const upload = await studio.uploadImage(
       userId,
       slot,

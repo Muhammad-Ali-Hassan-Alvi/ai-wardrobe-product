@@ -23,16 +23,20 @@ type UploadMap = {
   accessories: string | null;
 };
 
+type LabelMap = UploadMap;
+
 interface DemoStore {
   uploads: UploadMap;
+  uploadLabels: LabelMap;
   result: DemoOutfitResult;
   outfitId: string | null;
   isUploading: Record<StudioSlot, boolean>;
+  isClassifyingGarment: boolean;
   isGenerating: boolean;
   error: string | null;
   initialized: boolean;
   initSession: () => Promise<void>;
-  uploadFile: (slot: StudioSlot, file: File) => Promise<void>;
+  uploadFile: (slot: StudioSlot | "auto", file: File) => Promise<void>;
   removeUpload: (slot: StudioSlot) => Promise<void>;
   generate: () => Promise<DemoOutfitResult>;
   clearError: () => void;
@@ -41,6 +45,20 @@ interface DemoStore {
   getUploadedGarmentCount: () => number;
   getGarmentSlots: () => DemoGarmentSlot[];
 }
+
+const emptyLabels = (): LabelMap => ({
+  userPhoto: null,
+  dress: null,
+  shoes: null,
+  accessories: null,
+});
+
+const API_SLOT_TO_STUDIO: Record<string, StudioSlot> = {
+  USER_PHOTO: "userPhoto",
+  DRESS: "dress",
+  SHOES: "shoes",
+  ACCESSORIES: "accessories",
+};
 
 const emptyUploads = (): UploadMap => ({
   userPhoto: null,
@@ -53,8 +71,10 @@ export const useDemoStore = create<DemoStore>()(
   devtools(
     (set, get) => ({
       uploads: emptyUploads(),
+      uploadLabels: emptyLabels(),
       result: MOCK_OUTFIT_RESULT,
       outfitId: null,
+      isClassifyingGarment: false,
       isUploading: {
         userPhoto: false,
         dress: false,
@@ -70,8 +90,10 @@ export const useDemoStore = create<DemoStore>()(
         try {
           await ensureSession();
           const { uploads } = await fetchUploads();
+          const mapped = uploadsToMap(uploads);
           set({
-            uploads: uploadsToMap(uploads),
+            uploads: mapped.uploads,
+            uploadLabels: mapped.labels,
             initialized: true,
             error: null,
           });
@@ -84,19 +106,33 @@ export const useDemoStore = create<DemoStore>()(
       },
 
       uploadFile: async (slot, file) => {
+        const isAuto = slot === "auto";
         set((s) => ({
-          isUploading: { ...s.isUploading, [slot]: true },
+          isUploading: isAuto
+            ? s.isUploading
+            : { ...s.isUploading, [slot]: true },
+          isClassifyingGarment: isAuto,
           error: null,
         }));
         try {
           const { upload } = await uploadImage(slot, file);
+          const studioSlot =
+            API_SLOT_TO_STUDIO[upload.slot] ?? (isAuto ? "dress" : slot);
           set((s) => ({
-            uploads: { ...s.uploads, [slot]: upload.secureUrl },
-            isUploading: { ...s.isUploading, [slot]: false },
+            uploads: { ...s.uploads, [studioSlot]: upload.secureUrl },
+            uploadLabels: {
+              ...s.uploadLabels,
+              [studioSlot]: upload.detectedLabel ?? null,
+            },
+            isUploading: { ...s.isUploading, [studioSlot]: false },
+            isClassifyingGarment: false,
           }));
         } catch (e) {
           set((s) => ({
-            isUploading: { ...s.isUploading, [slot]: false },
+            isUploading: isAuto
+              ? s.isUploading
+              : { ...s.isUploading, [slot]: false },
+            isClassifyingGarment: false,
             error: e instanceof Error ? e.message : "Upload failed",
           }));
           throw e;
@@ -108,6 +144,7 @@ export const useDemoStore = create<DemoStore>()(
           await deleteUpload(slot);
           set((s) => ({
             uploads: { ...s.uploads, [slot]: null },
+            uploadLabels: { ...s.uploadLabels, [slot]: null },
             error: null,
           }));
         } catch (e) {
@@ -150,6 +187,7 @@ export const useDemoStore = create<DemoStore>()(
         }
         set({
           uploads: emptyUploads(),
+          uploadLabels: emptyLabels(),
           result: MOCK_OUTFIT_RESULT,
           outfitId: null,
           error: null,

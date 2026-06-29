@@ -10,7 +10,7 @@ import {
 import { LANDING_VALUE_PROPS } from "../../../constants/landing-images";
 import { SectionReveal } from "../shared/section-reveal";
 
-const ICONS = [Heart, Sparkles, Zap] as const;
+const VALUE_PROP_ICONS = [Heart, Sparkles, Zap] as const;
 
 export function ValuePropsSection() {
   return (
@@ -19,7 +19,7 @@ export function ValuePropsSection() {
         <SectionReveal>
           <div className="grid gap-6 md:grid-cols-3 md:gap-8">
             {LANDING_VALUE_PROPS.map((item, i) => {
-              const Icon = ICONS[i] ?? Sparkles;
+              const Icon = VALUE_PROP_ICONS[i] ?? Sparkles;
               return (
                 <div
                   key={item.title}

@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DisplayLG, FashionContainer } from "@/design-system";
-import { ease } from "@/design-system/motion";
+import { LayoutDashboard, Wand2 } from "lucide-react";
+import { DisplayLG, FashionContainer } from "@/design-system";import { ease } from "@/design-system/motion";
 import { DEMO_ROUTES } from "../../../constants/demo.constants";
+import { APP_ROUTES } from "@/shared/constants/routes";
 import { LandingPrimaryLink } from "../shared/landing-primary-link";
+import { LandingOutlineLink } from "../shared/landing-outline-link";
 
 export function FinalCtaSection() {
   return (
@@ -17,7 +19,7 @@ export function FinalCtaSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: ease.premium }}
-          className="glass-panel rounded-[var(--radius-3xl)] px-8 py-14 text-center shadow-soft-xl md:px-12 md:py-16"
+          className="landing-footer-shell rounded-[var(--radius-3xl)] px-8 py-14 text-center md:px-12 md:py-16"
         >
           <DisplayLG className="text-balance text-foreground">
             Your closet is waiting.
@@ -28,12 +30,16 @@ export function FinalCtaSection() {
             next shaadi, dholki, or dinner.
           </p>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
             <LandingPrimaryLink href={DEMO_ROUTES.studio} size="pill-lg">
+              <Wand2 className="size-4" strokeWidth={1.5} />
               Begin styling
             </LandingPrimaryLink>
-          </div>
-        </motion.div>
+            <LandingOutlineLink href={APP_ROUTES.dashboard} size="pill-lg">
+              <LayoutDashboard className="size-4" strokeWidth={1.5} />
+              Go to dashboard
+            </LandingOutlineLink>
+          </div>        </motion.div>
       </FashionContainer>
     </section>
   );

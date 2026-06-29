@@ -21,7 +21,7 @@ export function LandingOutlineLink({
       href={href}
       className={cn(
         fashionButtonVariants({ variant: "outline", size }),
-        "inline-flex no-underline",
+        "inline-flex items-center gap-2 no-underline",
         className,
       )}
     >

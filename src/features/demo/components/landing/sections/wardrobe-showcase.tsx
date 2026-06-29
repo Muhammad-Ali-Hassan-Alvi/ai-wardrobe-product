@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Wand2 } from "lucide-react";
 import {
   BodyMD,
   FashionContainer,
@@ -35,6 +36,7 @@ export function WardrobeShowcaseSection() {
               before the event.
             </BodyMD>
             <LandingPrimaryLink href={DEMO_ROUTES.studio} size="pill" className="mt-8">
+              <Wand2 className="size-4" strokeWidth={1.5} />
               Open studio
             </LandingPrimaryLink>
           </SectionReveal>

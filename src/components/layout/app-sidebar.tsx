@@ -2,31 +2,11 @@
 
 
 
-import {
-
-  Box,
-
-  Home,
-
-  Layers,
-
-  LayoutDashboard,
-
-  MessageCircle,
-
-  Settings,
-
-  Shirt,
-
-  Sparkles,
-
-  Wand2,
-
-} from "lucide-react";
-
 import Link from "next/link";
 
 import { usePathname } from "next/navigation";
+
+import { Shirt } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -35,30 +15,6 @@ import { APP_ROUTES, NAV_ITEMS } from "@/shared/constants";
 import { useAppStore } from "@/stores";
 
 import { useIsMobile } from "@/hooks";
-
-
-
-const iconMap = {
-
-  Home,
-
-  LayoutDashboard,
-
-  Shirt,
-
-  Sparkles,
-
-  Wand2,
-
-  Layers,
-
-  MessageCircle,
-
-  Box,
-
-  Settings,
-
-} as const;
 
 
 
@@ -108,7 +64,7 @@ export function AppSidebar() {
 
         className={cn(
 
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-300 lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-300 lg:sticky lg:top-0 lg:z-auto lg:translate-x-0",
 
           isMobile && !sidebarOpen && "-translate-x-full",
 
@@ -120,7 +76,7 @@ export function AppSidebar() {
 
           <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
 
-            <Sparkles className="size-4" />
+            <Shirt className="size-4" />
 
           </div>
 
@@ -136,16 +92,22 @@ export function AppSidebar() {
 
 
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-4 scrollbar-thin">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4 scrollbar-thin">
 
           {NAV_ITEMS.map((item) => {
-
-            const Icon = iconMap[item.icon];
+            const Icon = item.icon;
 
             const isActive =
               pathname === item.href ||
               (item.href === APP_ROUTES.studio &&
                 pathname.startsWith("/studio"));
+
+            const accentClass =
+              isActive && item.href === APP_ROUTES.dashboard
+                ? "nav-sidebar-dashboard"
+                : isActive && item.href === APP_ROUTES.studio
+                  ? "nav-sidebar-studio"
+                  : null;
 
             return (
 
@@ -167,7 +129,10 @@ export function AppSidebar() {
 
                   isActive
 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    ? cn(
+                        "font-semibold",
+                        accentClass ?? "bg-sidebar-accent text-sidebar-accent-foreground",
+                      )
 
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
 

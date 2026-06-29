@@ -3,6 +3,8 @@ import { resolveTryOnKind } from "@/shared/utils/try-on-label";
 
 export type StudioSlot = "userPhoto" | "dress" | "shoes" | "accessories";
 
+export type GarmentStudioSlot = "dress" | "shoes" | "accessories";
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -14,6 +16,7 @@ interface UploadDto {
   slot: string;
   secureUrl: string;
   cloudinaryPublicId: string;
+  detectedLabel?: string | null;
 }
 
 interface OutfitDto {
@@ -49,7 +52,7 @@ export async function fetchUploads() {
   return request<{ uploads: UploadDto[] }>("/api/v1/uploads");
 }
 
-export async function uploadImage(slot: StudioSlot, file: File) {
+export async function uploadImage(slot: StudioSlot | "auto", file: File) {
   const form = new FormData();
   form.append("file", file);
   form.append("slot", slot);
@@ -104,9 +107,18 @@ export function uploadsToMap(uploads: UploadDto[]) {
     shoes: null as string | null,
     accessories: null as string | null,
   };
+  const labels = {
+    userPhoto: null as string | null,
+    dress: null as string | null,
+    shoes: null as string | null,
+    accessories: null as string | null,
+  };
   for (const u of uploads) {
     const key = SLOT_FROM_API[u.slot];
-    if (key) map[key] = u.secureUrl;
+    if (key) {
+      map[key] = u.secureUrl;
+      labels[key] = u.detectedLabel ?? null;
+    }
   }
-  return map;
+  return { uploads: map, labels };
 }

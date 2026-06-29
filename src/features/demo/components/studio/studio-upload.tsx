@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Loader2, Plus, Sparkles, Wand2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Plus,
+  ScanLine,
+  Sparkles,
+  Wand2,
+  X,
+} from "lucide-react";
 import {
   FashionButton,
   FashionUploadZone,
@@ -15,56 +23,31 @@ import { useSession } from "@/components/providers";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { useDemoStore } from "../../store/demo-store";
 import { DEMO_ROUTES } from "../../constants/demo.constants";
-import type { StudioSlot } from "../../api/studio-api";
+import type { GarmentStudioSlot, StudioSlot } from "../../api/studio-api";
 
-type GarmentSlot = "dress" | "shoes" | "accessories";
+const GARMENT_SLOTS: GarmentStudioSlot[] = ["dress", "shoes", "accessories"];
 
-const GARMENT_CONFIG: {
-  slot: GarmentSlot;
-  label: string;
-  hint: string;
-  addLabel: string;
-}[] = [
-  {
-    slot: "dress",
-    label: "Kurta",
-    hint: "Kurta, shalwar kameez, or formal top",
-    addLabel: "Add kurta",
-  },
-  {
-    slot: "shoes",
-    label: "Khussa",
-    hint: "Khussa, loafers, or formal shoes",
-    addLabel: "Add khussa",
-  },
-  {
-    slot: "accessories",
-    label: "Clutch",
-    hint: "Clutch, dupatta, or bag",
-    addLabel: "Add clutch",
-  },
-];
-
-const PREVIEW_LABELS: Record<StudioSlot, string> = {
-  userPhoto: "You",
-  dress: "Kurta",
-  shoes: "Khussa",
-  accessories: "Clutch",
+const SLOT_FALLBACK_LABEL: Record<GarmentStudioSlot, string> = {
+  dress: "Main garment",
+  shoes: "Footwear",
+  accessories: "Accessory",
 };
 
 export function StudioUploadExperience() {
   const router = useRouter();
   const { user } = useSession();
   const uploads = useDemoStore((s) => s.uploads);
+  const uploadLabels = useDemoStore((s) => s.uploadLabels);
   const uploadFile = useDemoStore((s) => s.uploadFile);
   const removeUpload = useDemoStore((s) => s.removeUpload);
   const initSession = useDemoStore((s) => s.initSession);
   const isUploading = useDemoStore((s) => s.isUploading);
+  const isClassifyingGarment = useDemoStore((s) => s.isClassifyingGarment);
   const error = useDemoStore((s) => s.error);
   const isReady = useDemoStore((s) => s.isReadyToGenerate());
   const uploadedGarmentCount = useDemoStore((s) => s.getUploadedGarmentCount());
 
-  const [addingSlot, setAddingSlot] = useState<GarmentSlot | null>(null);
+  const [addingGarment, setAddingGarment] = useState(false);
 
   useEffect(() => {
     void initSession();
@@ -75,37 +58,40 @@ export function StudioUploadExperience() {
     router.push(DEMO_ROUTES.generating);
   };
 
-  const handleFile = async (slot: StudioSlot, file: File) => {
-    await uploadFile(slot, file);
-    if (slot !== "userPhoto") setAddingSlot(null);
+  const handlePortrait = async (file: File) => {
+    await uploadFile("userPhoto", file);
   };
 
-  const handleRemoveGarment = async (slot: GarmentSlot) => {
-    await removeUpload(slot);
-    setAddingSlot(null);
+  const handleGarment = async (file: File) => {
+    await uploadFile("auto", file);
+    setAddingGarment(false);
   };
 
-  const uploadedGarments = GARMENT_CONFIG.filter((item) => uploads[item.slot]);
-  const slotsAvailableToAdd = GARMENT_CONFIG.filter(
-    (item) => !uploads[item.slot] && item.slot !== addingSlot,
-  );
+  const uploadedGarments = GARMENT_SLOTS.filter((slot) => uploads[slot]);
+  const canAddMore = uploadedGarments.length < GARMENT_SLOTS.length;
 
   const uploadedPreview = (
-    Object.entries(PREVIEW_LABELS) as [StudioSlot, string][]
+    [
+      ["userPhoto", "You"],
+      ...uploadedGarments.map(
+        (slot) =>
+          [slot, uploadLabels[slot] ?? SLOT_FALLBACK_LABEL[slot]] as const,
+      ),
+    ] as [StudioSlot, string][]
   ).filter(([slot]) => uploads[slot]);
 
   const totalUploaded = uploadedPreview.length;
 
   return (
-    <div className="page-ambient min-h-screen">
+    <div className="page-ambient-studio min-h-screen">
       <header className="sticky top-0 z-40 glass-strong">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
           <Link
-            href={DEMO_ROUTES.landing}
+            href={APP_ROUTES.dashboard}
             className="flex items-center gap-2 text-sm text-foreground/70 transition hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Back
+            Dashboard
           </Link>
           <div className="flex items-center gap-2 text-foreground">
             <Sparkles className="size-4 text-champagne" strokeWidth={1.5} />
@@ -143,8 +129,8 @@ export function StudioUploadExperience() {
         >
           <HeadingLG>Build your look</HeadingLG>
           <p className="mt-3 text-base text-foreground/75">
-            Upload your portrait and only the pieces you want styled — kurta,
-            khussa, clutch, or whatever you have.
+            Upload your portrait and wardrobe pieces — AI detects each item type
+            automatically.
           </p>
         </motion.div>
 
@@ -165,11 +151,11 @@ export function StudioUploadExperience() {
             )}
             <FashionUploadZone
               label="Portrait or full-body photo"
-              hint="Required — saved to Cloudinary"
+              hint="Required — saved securely"
               previewUrl={uploads.userPhoto}
               variant="accent"
               disabled={isUploading.userPhoto}
-              onFileSelect={(file) => void handleFile("userPhoto", file)}
+              onFileSelect={(file) => void handlePortrait(file)}
               onRemove={() => void removeUpload("userPhoto")}
             />
           </div>
@@ -184,43 +170,47 @@ export function StudioUploadExperience() {
           <Label className="mb-2 block text-champagne-foreground">
             Wardrobe Pieces
           </Label>
-          <p className="mb-6 text-sm text-foreground/70">
-            Add only what you have — no need to fill every slot.
+          <p className="mb-6 flex items-center gap-2 text-sm text-foreground/70">
+            <ScanLine className="size-4 text-champagne" strokeWidth={1.5} />
+            AI labels each upload — dress, shoes, bag, and more.
           </p>
 
-          {uploadedGarments.length === 0 && !addingSlot && (
+          {uploadedGarments.length === 0 && !addingGarment && (
             <p className="mb-4 text-sm text-foreground/60">
-              No pieces yet. Add at least one kurta, khussa, or clutch below.
+              No pieces yet. Add at least one wardrobe item below.
             </p>
           )}
 
           <div className="flex flex-wrap gap-4">
-            {uploadedGarments.map((item) => (
-              <div
-                key={item.slot}
-                className="relative w-full max-w-[220px] flex-1 sm:w-auto"
-              >
-                {isUploading[item.slot] && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-2xl)] bg-white/60 backdrop-blur-sm">
-                    <Loader2 className="size-6 animate-spin text-champagne" />
-                  </div>
-                )}
-                <FashionUploadZone
-                  label={item.label}
-                  hint={item.hint}
-                  previewUrl={uploads[item.slot]}
-                  variant="glass"
-                  disabled={isUploading[item.slot]}
-                  onFileSelect={(file) => void handleFile(item.slot, file)}
-                  onRemove={() => void handleRemoveGarment(item.slot)}
-                />
-              </div>
-            ))}
+            {uploadedGarments.map((slot) => {
+              const label = uploadLabels[slot] ?? SLOT_FALLBACK_LABEL[slot];
+              return (
+                <div
+                  key={slot}
+                  className="relative w-full max-w-[220px] flex-1 sm:w-auto"
+                >
+                  {isUploading[slot] && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-2xl)] bg-white/60 backdrop-blur-sm">
+                      <Loader2 className="size-6 animate-spin text-champagne" />
+                    </div>
+                  )}
+                  <FashionUploadZone
+                    label={label}
+                    hint="AI detected"
+                    previewUrl={uploads[slot]}
+                    variant="glass"
+                    disabled={isUploading[slot]}
+                    onFileSelect={(file) => void uploadFile("auto", file)}
+                    onRemove={() => void removeUpload(slot)}
+                  />
+                </div>
+              );
+            })}
 
             <AnimatePresence>
-              {addingSlot && !uploads[addingSlot] && (
+              {addingGarment && (
                 <motion.div
-                  key={addingSlot}
+                  key="add-garment"
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
@@ -228,48 +218,43 @@ export function StudioUploadExperience() {
                 >
                   <button
                     type="button"
-                    onClick={() => setAddingSlot(null)}
+                    onClick={() => setAddingGarment(false)}
                     className="absolute -top-2 -right-2 z-20 flex size-7 items-center justify-center rounded-full bg-foreground text-background shadow-soft-sm"
                     aria-label="Cancel add"
                   >
                     <X className="size-3.5" />
                   </button>
-                  {isUploading[addingSlot] && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-2xl)] bg-white/60 backdrop-blur-sm">
+                  {(isClassifyingGarment || isUploading.dress || isUploading.shoes || isUploading.accessories) && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-2xl)] bg-white/70 backdrop-blur-sm">
                       <Loader2 className="size-6 animate-spin text-champagne" />
+                      <span className="text-xs text-foreground/70">
+                        Detecting item…
+                      </span>
                     </div>
                   )}
                   <FashionUploadZone
-                    label={
-                      GARMENT_CONFIG.find((g) => g.slot === addingSlot)!
-                        .label
-                    }
-                    hint={
-                      GARMENT_CONFIG.find((g) => g.slot === addingSlot)!.hint
-                    }
+                    label="Wardrobe piece"
+                    hint="Photo of clothing or accessory"
                     previewUrl={null}
                     variant="glass"
-                    disabled={isUploading[addingSlot]}
-                    onFileSelect={(file) => void handleFile(addingSlot, file)}
+                    disabled={isClassifyingGarment}
+                    onFileSelect={(file) => void handleGarment(file)}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {slotsAvailableToAdd.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-2">
-              {slotsAvailableToAdd.map((item) => (
-                <button
-                  key={item.slot}
-                  type="button"
-                  onClick={() => setAddingSlot(item.slot)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-soft-xs transition hover:bg-muted/50"
-                >
-                  <Plus className="size-3.5" />
-                  {item.addLabel}
-                </button>
-              ))}
+          {canAddMore && !addingGarment && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setAddingGarment(true)}
+                className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background px-5 py-2.5 text-sm font-medium text-foreground shadow-soft-xs transition hover:bg-muted/50"
+              >
+                <Plus className="size-4" />
+                Add wardrobe piece
+              </button>
             </div>
           )}
         </motion.section>
@@ -312,7 +297,11 @@ export function StudioUploadExperience() {
         >
           <FashionButton
             size="pill-lg"
-            disabled={!isReady || Object.values(isUploading).some(Boolean)}
+            disabled={
+              !isReady ||
+              isClassifyingGarment ||
+              Object.values(isUploading).some(Boolean)
+            }
             onClick={handleGenerate}
           >
             <Wand2 className="size-5" />
@@ -323,7 +312,7 @@ export function StudioUploadExperience() {
               {!uploads.userPhoto
                 ? "Add your portrait to continue"
                 : uploadedGarmentCount === 0
-                  ? "Add at least one wardrobe piece (kurta, khussa, or clutch)"
+                  ? "Add at least one wardrobe piece"
                   : "Ready when you are — add more pieces anytime"}
             </p>
           )}

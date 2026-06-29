@@ -7,6 +7,7 @@ import { createRepositories } from "../db/repositories";
 import type { UploadRecord } from "../db/repositories";
 import { getStorageService } from "../storage";
 import type { UploadSlot } from "@/generated/prisma/client";
+import { classifyGarmentImage } from "./garment-classifier.service";
 
 export const outfitAnalysisSchema = z.object({
   score: z.number().min(0).max(100),
@@ -20,10 +21,14 @@ export type OutfitAnalysis = z.infer<typeof outfitAnalysisSchema>;
 
 const SLOT_LABELS: Record<UploadSlot, string> = {
   USER_PHOTO: "portrait photo",
-  DRESS: "kurta or formal garment",
-  SHOES: "khussa or formal shoes",
-  ACCESSORIES: "clutch or accessory",
+  DRESS: "main garment",
+  SHOES: "footwear",
+  ACCESSORIES: "accessory",
 };
+
+function labelForUpload(upload: UploadRecord): string {
+  return upload.detectedLabel ?? SLOT_LABELS[upload.slot];
+}
 
 /** Prevents duplicate in-flight generations per session user (React Strict Mode, double clicks). */
 const generationLocks = new Map<string, Promise<unknown>>();
@@ -39,6 +44,7 @@ export class StudioService {
     slot: UploadSlot,
     buffer: Buffer,
     mimeType: string,
+    detectedLabel?: string | null,
   ): Promise<UploadRecord> {
     if (!this.storage.isAllowedMimeType(mimeType)) {
       throw new Error(`Unsupported file type: ${mimeType}`);
@@ -70,11 +76,38 @@ export class StudioService {
     return this.repos.upload.upsert(userId, slot, {
       cloudinaryPublicId: asset.publicId,
       secureUrl: asset.url,
+      detectedLabel: detectedLabel ?? null,
       width: asset.width ?? null,
       height: asset.height ?? null,
       format: asset.format ?? null,
       bytes: asset.bytes ?? null,
     });
+  }
+
+  async uploadGarmentWithAi(
+    userId: string,
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<UploadRecord> {
+    const tempAsset = await this.storage.uploadBuffer(buffer, {
+      folder: `${cloudinaryConfig.folders.wardrobe}/${userId}/classify`,
+      publicId: `classify_${Date.now()}`,
+      mimeType,
+    });
+
+    try {
+      const classification = await classifyGarmentImage(tempAsset.url);
+      const upload = await this.uploadImage(
+        userId,
+        classification.slot,
+        buffer,
+        mimeType,
+        classification.label,
+      );
+      return upload;
+    } finally {
+      await this.storage.deleteAsset(tempAsset.publicId).catch(() => undefined);
+    }
   }
 
   async removeUpload(userId: string, slot: UploadSlot) {
@@ -148,7 +181,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         slot: g.slot,
         imageUrl: g.secureUrl,
         publicId: g.cloudinaryPublicId,
-        label: SLOT_LABELS[g.slot],
+        label: labelForUpload(g),
       })),
     });
 
@@ -239,7 +272,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
       ];
 
       const garmentDescriptions = garments
-        .map((g) => SLOT_LABELS[g.slot])
+        .map((g) => labelForUpload(g))
         .join(", ");
 
       const analysis = await this.analyzeOutfit(imageUrls, garmentDescriptions);

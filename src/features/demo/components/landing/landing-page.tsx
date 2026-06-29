@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { LandingNav } from "./shared/landing-nav";
 import { ValuePropsSection } from "./sections/value-props";
 import { EditorialHeroSection } from "./sections/editorial-hero";
 import { LiveWorkflowSection } from "./sections/live-workflow";
@@ -28,7 +29,8 @@ const Preview3DSection = dynamic(
 
 export function LandingPage() {
   return (
-    <div className="page-ambient min-h-full">
+    <div className="page-ambient min-h-screen">
+      <LandingNav />
       <main>
         <EditorialHeroSection />
         <ValuePropsSection />

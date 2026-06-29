@@ -44,6 +44,7 @@ model Upload {
   slot               UploadSlot
   cloudinaryPublicId String
   secureUrl          String
+  detectedLabel      String?
   width              Int?
   height             Int?
   format             String?

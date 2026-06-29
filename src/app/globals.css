@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 
 @import "../design-system/tokens/colors.css";
+@import "../design-system/tokens/color-themes.css";
 @import "../design-system/tokens/radius.css";
 @import "../design-system/tokens/shadows.css";
 @import "../design-system/tokens/spacing.css";

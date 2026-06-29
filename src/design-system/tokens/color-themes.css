@@ -1,0 +1,100 @@
+/**
+ * Ladies fashion color themes — applied via data-color-theme on <html>
+ */
+
+[data-color-theme="classic"] {
+  --theme-glow-accent: oklch(0.94 0.035 350 / 50%);
+  --theme-glow-bottom: oklch(0.96 0.04 340 / 65%);
+  --landing-nav-bg: oklch(0.97 0.04 350 / 94%);
+  --landing-nav-border: oklch(0.86 0.065 350 / 42%);
+  --landing-footer-bg: oklch(0.985 0.038 350 / 96%);
+  --landing-footer-border: oklch(0.88 0.055 350 / 38%);
+  --champagne-glow: oklch(0.85 0.07 350 / 22%);
+}
+
+[data-color-theme="rose"] {
+  --background: oklch(0.995 0.004 15);
+  --foreground: oklch(0.22 0.04 15);
+  --primary: oklch(0.48 0.18 25);
+  --primary-foreground: oklch(0.99 0.002 15);
+  --secondary: oklch(0.96 0.02 15);
+  --secondary-foreground: oklch(0.32 0.06 20);
+  --muted: oklch(0.965 0.015 15);
+  --muted-foreground: oklch(0.42 0.04 20);
+  --accent: oklch(0.94 0.04 15);
+  --accent-foreground: oklch(0.38 0.1 22);
+  --border: oklch(0.9 0.03 15);
+  --champagne: oklch(0.52 0.16 22);
+  --champagne-muted: oklch(0.94 0.05 15);
+  --champagne-foreground: oklch(0.42 0.12 22);
+  --champagne-glow: oklch(0.78 0.12 18 / 24%);
+  --theme-glow-accent: oklch(0.95 0.06 18 / 55%);
+  --theme-glow-bottom: oklch(0.97 0.05 15 / 70%);
+  --landing-nav-bg: oklch(0.98 0.05 15 / 94%);
+  --landing-nav-border: oklch(0.88 0.08 18 / 45%);
+  --landing-footer-bg: oklch(0.99 0.045 15 / 96%);
+  --landing-footer-border: oklch(0.9 0.07 18 / 40%);
+  --sidebar: oklch(0.99 0.006 15);
+  --sidebar-accent: oklch(0.95 0.03 15);
+  --sidebar-primary: oklch(0.48 0.18 25);
+  --glass-bg: oklch(1 0.01 15 / 68%);
+  --glass-bg-strong: oklch(1 0.01 15 / 86%);
+}
+
+[data-color-theme="baby-pink"] {
+  --background: oklch(0.99 0.016 350);
+  --foreground: oklch(0.28 0.04 350);
+  --primary: oklch(0.55 0.16 350);
+  --primary-foreground: oklch(0.99 0.005 350);
+  --secondary: oklch(0.96 0.03 350);
+  --secondary-foreground: oklch(0.38 0.06 350);
+  --muted: oklch(0.965 0.025 350);
+  --muted-foreground: oklch(0.48 0.05 350);
+  --accent: oklch(0.94 0.04 350);
+  --accent-foreground: oklch(0.45 0.1 350);
+  --border: oklch(0.9 0.03 350);
+  --champagne: oklch(0.65 0.14 350);
+  --champagne-muted: oklch(0.95 0.05 350);
+  --champagne-foreground: oklch(0.5 0.12 350);
+  --champagne-glow: oklch(0.84 0.1 350 / 28%);
+  --theme-glow-accent: oklch(0.93 0.08 350 / 60%);
+  --theme-glow-bottom: oklch(0.95 0.07 340 / 75%);
+  --landing-nav-bg: oklch(0.975 0.055 350 / 95%);
+  --landing-nav-border: oklch(0.85 0.09 350 / 48%);
+  --landing-footer-bg: oklch(0.985 0.05 350 / 97%);
+  --landing-footer-border: oklch(0.87 0.08 350 / 42%);
+  --sidebar: oklch(0.995 0.012 350);
+  --sidebar-accent: oklch(0.96 0.035 350);
+  --sidebar-primary: oklch(0.55 0.16 350);
+  --glass-bg: oklch(1 0.02 350 / 72%);
+  --glass-bg-strong: oklch(1 0.02 350 / 90%);
+}
+
+[data-color-theme="blush"] {
+  --background: oklch(0.993 0.022 340);
+  --foreground: oklch(0.3 0.035 340);
+  --primary: oklch(0.52 0.14 340);
+  --primary-foreground: oklch(0.99 0.005 340);
+  --secondary: oklch(0.97 0.032 340);
+  --secondary-foreground: oklch(0.4 0.055 340);
+  --muted: oklch(0.97 0.026 340);
+  --muted-foreground: oklch(0.5 0.045 340);
+  --accent: oklch(0.955 0.045 340);
+  --accent-foreground: oklch(0.46 0.09 340);
+  --border: oklch(0.91 0.03 340);
+  --champagne: oklch(0.62 0.12 340);
+  --champagne-muted: oklch(0.96 0.05 340);
+  --champagne-foreground: oklch(0.48 0.1 340);
+  --champagne-glow: oklch(0.82 0.09 340 / 30%);
+  --theme-glow-accent: oklch(0.94 0.07 340 / 62%);
+  --theme-glow-bottom: oklch(0.96 0.06 330 / 78%);
+  --landing-nav-bg: oklch(0.978 0.058 340 / 95%);
+  --landing-nav-border: oklch(0.84 0.1 340 / 50%);
+  --landing-footer-bg: oklch(0.988 0.052 340 / 97%);
+  --landing-footer-border: oklch(0.86 0.09 340 / 44%);
+  --sidebar: oklch(0.996 0.014 340);
+  --sidebar-accent: oklch(0.965 0.038 340);
+  --sidebar-primary: oklch(0.52 0.14 340);
+  --glass-bg: oklch(1 0.025 340 / 74%);
+  --glass-bg-strong: oklch(1 0.025 340 / 92%);
+}

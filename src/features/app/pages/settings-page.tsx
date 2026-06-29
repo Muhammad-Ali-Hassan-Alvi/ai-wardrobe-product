@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cpu, LogOut, User } from "lucide-react";
+import { Cpu, LogOut, Palette, User } from "lucide-react";
 import { FashionButton } from "@/design-system";
+import { COLOR_THEMES } from "@/components/providers/color-theme-provider";
+import { useAppStore } from "@/stores";
 import { useSession } from "@/components/providers";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { PageHeader } from "../components/page-header";
@@ -28,6 +30,8 @@ export function SettingsPage() {
   const router = useRouter();
   const { user, signOut } = useSession();
   const [aiConfig, setAiConfig] = useState<AiConfigResponse | null>(null);
+  const colorTheme = useAppStore((s) => s.colorTheme);
+  const setColorTheme = useAppStore((s) => s.setColorTheme);
 
   useEffect(() => {
     fetch("/api/v1/config/ai")
@@ -51,6 +55,36 @@ export function SettingsPage() {
         title="Account & preferences"
         description="Manage your profile, AI models, and session."
       />
+
+      <section className="glass-panel mb-6 rounded-[var(--radius-2xl)] p-6">
+        <h2 className="flex items-center gap-2 text-heading-sm">
+          <Palette className="size-4" />
+          Color theme
+        </h2>
+        <p className="mt-2 text-body-sm text-muted-foreground">
+          Soft palettes designed for a ladies&apos; fashion experience.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {COLOR_THEMES.map((theme) => (
+            <button
+              key={theme.id}
+              type="button"
+              onClick={() => setColorTheme(theme.id)}
+              className={`flex items-center gap-3 rounded-[var(--radius-lg)] border px-4 py-3 text-left text-sm transition ${
+                colorTheme === theme.id
+                  ? "border-primary bg-primary/5 font-medium"
+                  : "border-border/60 hover:bg-muted/40"
+              }`}
+            >
+              <span
+                className="size-8 shrink-0 rounded-full ring-1 ring-border"
+                style={{ backgroundColor: theme.swatch }}
+              />
+              {theme.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="glass-panel rounded-[var(--radius-2xl)] p-6">
         <h2 className="flex items-center gap-2 text-heading-sm">

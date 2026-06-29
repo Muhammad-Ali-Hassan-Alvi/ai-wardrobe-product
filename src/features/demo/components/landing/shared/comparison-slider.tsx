@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { ChevronsLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ComparisonSliderProps {
@@ -93,10 +94,7 @@ export function ComparisonSlider({
           className="absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full glass-strong shadow-soft-md"
           animate={isDragging ? { scale: 1.1 } : { scale: 1 }}
         >
-          <div className="flex gap-0.5">
-            <span className="block h-3 w-0.5 rounded-full bg-foreground/40" />
-            <span className="block h-3 w-0.5 rounded-full bg-foreground/40" />
-          </div>
+          <ChevronsLeftRight className="size-4 text-foreground/70" strokeWidth={1.5} />
         </motion.div>
       </div>
 

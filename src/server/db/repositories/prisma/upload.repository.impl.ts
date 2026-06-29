@@ -11,6 +11,7 @@ function mapUpload(row: {
   slot: UploadSlot;
   cloudinaryPublicId: string;
   secureUrl: string;
+  detectedLabel: string | null;
   width: number | null;
   height: number | null;
   format: string | null;

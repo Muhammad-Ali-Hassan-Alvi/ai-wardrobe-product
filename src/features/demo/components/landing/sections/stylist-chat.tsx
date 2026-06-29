@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { MessageCircle, UserRound } from "lucide-react";
 import {
   Caption,
   FashionContainer,
@@ -56,8 +56,13 @@ export function StylistChatSection() {
               transition={{ duration: 0.5, ease: ease.premium }}
               className="flex justify-end"
             >
-              <div className="max-w-[85%] rounded-[var(--radius-2xl)] rounded-br-sm bg-primary px-5 py-3.5 text-primary-foreground shadow-soft-sm">
-                <p className="text-body-sm">{STYLIST_CHAT.user}</p>
+              <div className="flex max-w-[85%] items-end gap-2">
+                <div className="max-w-full rounded-[var(--radius-2xl)] rounded-br-sm bg-primary px-5 py-3.5 text-primary-foreground shadow-soft-sm">
+                  <p className="text-body-sm">{STYLIST_CHAT.user}</p>
+                </div>
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                  <UserRound className="size-3.5 text-primary" strokeWidth={1.5} />
+                </div>
               </div>
             </motion.div>
 
@@ -70,7 +75,7 @@ export function StylistChatSection() {
                 className="flex items-start gap-3"
               >
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-champagne/15">
-                  <Sparkles className="size-3.5 text-champagne" strokeWidth={1.5} />
+                  <MessageCircle className="size-3.5 text-champagne" strokeWidth={1.5} />
                 </div>
                 <div className="max-w-[85%] rounded-[var(--radius-2xl)] rounded-bl-sm glass px-5 py-3.5 shadow-soft-sm">
                   <p className="text-body-sm leading-relaxed text-foreground">

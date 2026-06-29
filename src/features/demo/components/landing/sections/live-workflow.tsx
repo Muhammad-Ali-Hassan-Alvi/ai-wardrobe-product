@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Layers, Shirt, Sparkles, UserRound, Wand2 } from "lucide-react";
 import {
   BodyMD,
   Caption,
@@ -25,6 +25,13 @@ const STEP_LABELS: Record<WorkflowStep, string> = {
   clothing: "Garments",
   processing: "AI",
   result: "Outfit",
+};
+
+const STEP_ICONS: Record<WorkflowStep, ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  portrait: UserRound,
+  clothing: Shirt,
+  processing: Sparkles,
+  result: Layers,
 };
 
 const STEP_DURATION_MS = 3200;
@@ -65,22 +72,26 @@ export function LiveWorkflowSection() {
           <div className="glass-panel mx-auto max-w-4xl overflow-hidden rounded-[var(--radius-3xl)] shadow-soft-xl">
             {/* Step tabs */}
             <div className="flex flex-wrap items-center justify-center gap-2 border-b border-border/50 bg-muted/30 px-4 py-3 md:gap-3 md:px-6">
-              {STEPS.map((key, i) => (
+              {STEPS.map((key, i) => {
+                const StepIcon = STEP_ICONS[key];
+                return (
                 <div key={key} className="flex items-center gap-2 md:gap-3">
                   <span
-                    className={`rounded-full px-3 py-1.5 text-body-sm font-medium transition ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-body-sm font-medium transition ${
                       step === key
                         ? "bg-primary text-white shadow-soft-sm"
                         : "bg-background text-foreground/70"
                     }`}
                   >
+                    <StepIcon className="size-3.5 shrink-0" strokeWidth={1.5} />
                     {STEP_LABELS[key]}
                   </span>
                   {i < STEPS.length - 1 && (
                     <ArrowRight className="hidden size-3.5 text-foreground/40 sm:block" />
                   )}
                 </div>
-              ))}
+              );
+              })}
             </div>
 
             {/* Stage */}
@@ -271,7 +282,7 @@ export function LiveWorkflowSection() {
                                   key={line}
                                   className="flex items-center gap-2 text-sm text-foreground/85"
                                 >
-                                  <Sparkles className="size-3 shrink-0 text-champagne" />
+                                  <Check className="size-3 shrink-0 text-champagne" strokeWidth={2} />
                                   {line}
                                 </li>
                               ),

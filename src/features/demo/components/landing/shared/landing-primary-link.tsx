@@ -24,7 +24,7 @@ export function LandingPrimaryLink({
       data-variant="primary"
       className={cn(
         fashionButtonVariants({ variant: "primary", size }),
-        "inline-flex no-underline",
+        "inline-flex items-center gap-2 no-underline",
         className,
       )}
     >

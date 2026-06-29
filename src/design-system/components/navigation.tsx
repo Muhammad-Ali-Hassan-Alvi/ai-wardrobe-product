@@ -12,7 +12,7 @@ const navBarVariants = cva(
         fixed:
           "fixed inset-x-0 top-0 z-50 border-b border-[var(--glass-border-subtle)] glass px-[var(--space-container-x)]",
         floating:
-          "fixed inset-x-4 top-4 z-50 mx-auto max-w-6xl rounded-[var(--radius-2xl)] border border-[var(--glass-border-subtle)] glass-strong px-6 shadow-soft-float md:inset-x-6",
+          "fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-[var(--radius-2xl)] border border-[var(--glass-border-subtle)] glass-strong shadow-soft-float",
         static: "relative border-b border-border/40 bg-background px-[var(--space-container-x)]",
       },
       height: {
@@ -41,7 +41,7 @@ function FashionNavBar({
   return (
     <header
       data-slot="fashion-nav-bar"
-      className={cn(navBarVariants({ variant, height, className }))}
+      className={cn(navBarVariants({ variant, height }), className)}
       {...props}
     >
       {children}

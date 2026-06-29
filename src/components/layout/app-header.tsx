@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Check, Home, Menu, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,14 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "@/components/providers";
+import { COLOR_THEMES } from "@/components/providers/color-theme-provider";
 import { useAppStore } from "@/stores";
 import { APP_ROUTES } from "@/shared/constants/routes";
 
 export function AppHeader() {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const { user, signOut } = useSession();
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const colorTheme = useAppStore((s) => s.colorTheme);
+  const setColorTheme = useAppStore((s) => s.setColorTheme);
 
   const initials = user?.name
     ? user.name
@@ -61,15 +63,42 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
-        >
-          <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        <Button variant="outline" size="sm" asChild className="gap-1.5">
+          <Link href={APP_ROUTES.home}>
+            <Home className="size-4" />
+            <span className="hidden sm:inline">Home</span>
+          </Link>
         </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Color theme">
+              <Palette className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Color theme</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {COLOR_THEMES.map((theme) => (
+              <DropdownMenuItem
+                key={theme.id}
+                onClick={() => setColorTheme(theme.id)}
+                className="flex items-center justify-between gap-2"
+              >
+                <span className="flex items-center gap-2">
+                  <span
+                    className="size-4 rounded-full ring-1 ring-border"
+                    style={{ backgroundColor: theme.swatch }}
+                  />
+                  {theme.label}
+                </span>
+                {colorTheme === theme.id && (
+                  <Check className="size-4 text-primary" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {user ? (
           <DropdownMenu>

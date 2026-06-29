@@ -43,7 +43,7 @@ export function ResultExperience() {
   };
 
   return (
-    <div className="page-ambient min-h-screen">
+    <div className="page-ambient-studio min-h-screen">
       <header className="sticky top-0 z-40 glass-strong">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link
