@@ -1,3 +1,5 @@
+import { getErrorMessage } from "@/shared/utils/error-message";
+
 export type NormalizedAiError = {
   message: string;
   status: number;
@@ -11,40 +13,40 @@ function extractRetrySeconds(raw: string): number | null {
 }
 
 export function getRateLimitDelayMs(error: unknown, fallbackMs = 7000): number {
-  const raw = error instanceof Error ? error.message : String(error);
+  const raw = getErrorMessage(error, "");
   const seconds = extractRetrySeconds(raw);
   return seconds != null ? Math.ceil(seconds * 1000) : fallbackMs;
 }
 
 /** Maps raw provider errors to short, user-safe messages for API + UI. */
 export function normalizeAiError(error: unknown): NormalizedAiError {
-  const raw = error instanceof Error ? error.message : String(error);
+  const raw = getErrorMessage(error, "Generation failed");
 
-    if (
-      raw.includes("429") ||
-      raw.includes("Too Many Requests") ||
-      raw.toLowerCase().includes("quota")
-    ) {
-      const retrySeconds = extractRetrySeconds(raw);
-      const retryHint =
-        retrySeconds != null
-          ? ` Try again in about ${Math.ceil(retrySeconds)} seconds.`
-          : " Wait a minute and try again.";
+  if (
+    raw.includes("429") ||
+    raw.includes("Too Many Requests") ||
+    raw.toLowerCase().includes("quota")
+  ) {
+    const retrySeconds = extractRetrySeconds(raw);
+    const retryHint =
+      retrySeconds != null
+        ? ` Try again in about ${Math.ceil(retrySeconds)} seconds.`
+        : " Wait a minute and try again.";
 
-      const isImageModel =
-        raw.includes("flash-image") ||
-        raw.includes("image-generation") ||
-        raw.includes("generate_content_image");
+    const isImageModel =
+      raw.includes("flash-image") ||
+      raw.includes("image-generation") ||
+      raw.includes("generate_content_image");
 
-      const modelHint = isImageModel
-        ? " This hit the Gemini *image* model quota (gemini-2.5-flash-image), which is separate from gemini-2.5-flash shown on your AI Studio dashboard. Set TRYON_PROVIDER=composite in .env.local to skip image API, or enable billing for image generation."
-        : " Check usage at ai.dev for the model shown in the error.";
+    const modelHint = isImageModel
+      ? " This hit the Gemini *image* model quota (gemini-2.5-flash-image), which is separate from gemini-2.5-flash shown on your AI Studio dashboard. Set TRYON_PROVIDER=composite in .env.local to skip image API, or enable billing for image generation."
+      : " Check usage at ai.dev for the model shown in the error.";
 
-      return {
-        message: `Gemini API quota or rate limit reached.${retryHint}${modelHint}`,
-        status: 429,
-      };
-    }
+    return {
+      message: `Gemini API quota or rate limit reached.${retryHint}${modelHint}`,
+      status: 429,
+    };
+  }
 
   if (raw.includes("404") && raw.includes("models/")) {
     return {
@@ -59,6 +61,14 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
       message:
         "Gemini API key is missing or invalid. Add GOOGLE_GENERATIVE_AI_API_KEY to .env.local.",
       status: 503,
+    };
+  }
+
+  if (raw.toLowerCase().includes("file size too large") || raw.includes("Max file size")) {
+    return {
+      message:
+        "Try-on image is too large to save. Reduce FASHN resolution or increase Cloudinary upload limits.",
+      status: 413,
     };
   }
 

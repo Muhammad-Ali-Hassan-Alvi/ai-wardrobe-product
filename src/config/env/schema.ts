@@ -39,7 +39,7 @@ export const aiEnvSchema = {
 /** Virtual try-on providers */
 export const tryOnEnvSchema = {
   TRYON_PROVIDER: z
-    .enum(["auto", "composite", "gemini", "fal", "replicate", "stub"])
+    .enum(["auto", "composite", "gemini", "fashn", "fal", "replicate", "stub"])
     .default("auto"),
   GEMINI_TRYON_MODEL: z.string().min(1).optional(),
   FAL_TRYON_MODEL: z.string().min(1).optional(),
@@ -48,7 +48,22 @@ export const tryOnEnvSchema = {
     .enum(["true", "false"])
     .default("false"),
   FAL_API_KEY: z.string().min(1).optional(),
+  FASHN_API_KEY: z.string().min(1).optional(),
   REPLICATE_API_TOKEN: z.string().min(1).optional(),
+  /** Remove busy portrait backgrounds before try-on (Cloudinary add-on). */
+  REMOVE_PORTRAIT_BACKGROUND: z
+    .enum(["true", "false"])
+    .default("true"),
+  /** Generate a standing full-body pose via FASHN when the portrait is seated. */
+  FASHN_REPOSE_STANDING: z.enum(["true", "false"]).default("false"),
+  /** Optional pose reference image URL for standing re-pose. */
+  FASHN_STANDING_POSE_URL: z.string().url().optional(),
+  /**
+   * complete = each wardrobe slot applied (~1 credit/slot, 3–4 total). Default.
+   * budget = 1 tryon-max call (~1 credit), prompt-only for extra pieces.
+   * quality = top + bottom only (~2 credits).
+   */
+  FASHN_PIPELINE: z.enum(["complete", "budget", "quality"]).default("complete"),
   TRYON_WEBHOOK_SECRET: z.string().optional(),
 } as const;
 

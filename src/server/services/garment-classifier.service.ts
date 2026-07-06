@@ -4,7 +4,7 @@ import { getAiProvider } from "../ai";
 import { GeminiAiProvider } from "../ai/providers/gemini.provider";
 
 const garmentClassificationSchema = z.object({
-  slot: z.enum(["DRESS", "SHOES", "ACCESSORIES"]),
+  slot: z.enum(["DRESS", "BOTTOMS", "SHOES", "ACCESSORIES"]),
   label: z.string().min(2).max(80),
   confidence: z.enum(["high", "medium", "low"]).optional(),
 });
@@ -14,13 +14,14 @@ export type GarmentClassification = z.infer<typeof garmentClassificationSchema>;
 const CLASSIFY_PROMPT = `You are a fashion vision AI for a women's modest wardrobe app.
 
 Look at this clothing or accessory image and classify it into exactly ONE category:
-- DRESS: tops, kurtas, shalwar kameez, dresses, abayas, dupattas worn as main piece, jackets, coats
+- DRESS: tops, kurtas, dresses, abayas, dupattas worn as main piece, jackets, coats, polo shirts
+- BOTTOMS: shalwar, trousers, pants, jeans, leggings, churidar, shalwar kameez bottom piece
 - SHOES: shoes, khussa, heels, sandals, boots, sneakers
-- ACCESSORIES: bags, clutches, jewelry, belts, scarves as accent, hats
+- ACCESSORIES: bags, clutches, jewelry, belts, scarves as accent, hats, sunglasses, glasses
 
 Return JSON only:
 {
-  "slot": "DRESS" | "SHOES" | "ACCESSORIES",
+  "slot": "DRESS" | "BOTTOMS" | "SHOES" | "ACCESSORIES",
   "label": "short human-readable name e.g. Embroidered navy kurta",
   "confidence": "high" | "medium" | "low"
 }
@@ -57,7 +58,8 @@ export async function classifyGarmentImage(
 
 export function slotToStudioKey(
   slot: UploadSlot,
-): "dress" | "shoes" | "accessories" {
+): "dress" | "bottoms" | "shoes" | "accessories" {
+  if (slot === "BOTTOMS") return "bottoms";
   if (slot === "SHOES") return "shoes";
   if (slot === "ACCESSORIES") return "accessories";
   return "dress";

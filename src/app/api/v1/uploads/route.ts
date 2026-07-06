@@ -6,6 +6,7 @@ import { StudioService } from "@/server/services/studio.service";
 const SLOT_MAP: Record<string, UploadSlot> = {
   userPhoto: "USER_PHOTO",
   dress: "DRESS",
+  bottoms: "BOTTOMS",
   shoes: "SHOES",
   accessories: "ACCESSORIES",
 };

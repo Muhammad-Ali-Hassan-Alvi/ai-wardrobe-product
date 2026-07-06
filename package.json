@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "prisma generate && next dev --turbopack",
     "build": "cross-env SKIP_ENV_VALIDATION=true prisma generate && cross-env SKIP_ENV_VALIDATION=true next build",
     "start": "next start",
     "lint": "eslint .",
@@ -44,6 +44,7 @@
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "fashn": "^0.15.0",
     "framer-motion": "^12.42.0",
     "lucide-react": "^1.21.0",
     "next": "^16.2.9",

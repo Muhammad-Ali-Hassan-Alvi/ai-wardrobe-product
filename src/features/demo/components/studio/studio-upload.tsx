@@ -1,41 +1,340 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  Loader2,
+  Camera,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  Layers,
   Plus,
   ScanLine,
+  Shirt,
   Sparkles,
   Wand2,
   X,
 } from "lucide-react";
-import {
-  FashionButton,
-  FashionUploadZone,
-  HeadingLG,
-  Label,
-} from "@/design-system";
+import { FashionButton, HeadingLG, Label } from "@/design-system";
+import { staggerContainer, staggerItem } from "@/design-system/motion/variants";
 import { useSession } from "@/components/providers";
 import { APP_ROUTES } from "@/shared/constants/routes";
 import { useDemoStore } from "../../store/demo-store";
 import { DEMO_ROUTES } from "../../constants/demo.constants";
 import type { GarmentStudioSlot, StudioSlot } from "../../api/studio-api";
 
-const GARMENT_SLOTS: GarmentStudioSlot[] = ["dress", "shoes", "accessories"];
+const GARMENT_SLOTS: GarmentStudioSlot[] = ["dress", "bottoms", "shoes", "accessories"];
 
-const SLOT_FALLBACK_LABEL: Record<GarmentStudioSlot, string> = {
-  dress: "Main garment",
-  shoes: "Footwear",
-  accessories: "Accessory",
+const SLOT_META: Record<GarmentStudioSlot, { label: string; icon: React.ElementType; color: string }> = {
+  dress: { label: "Kurta / Top", icon: Shirt, color: "var(--page-studio-accent)" },
+  bottoms: { label: "Shalwar / Bottom", icon: Layers, color: "#0d9488" },
+  shoes: { label: "Footwear", icon: Sparkles, color: "var(--page-dashboard-accent)" },
+  accessories: { label: "Accessory", icon: ScanLine, color: "#8b5cf6" },
 };
 
+/* ─── SVG Progress Ring ───────────────────────────────────── */
+function ProgressRing({ pct }: { pct: number }) {
+  const r = 22;
+  const circ = 2 * Math.PI * r;
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
+      <circle cx="28" cy="28" r={r} fill="none" strokeWidth="3" stroke="var(--border)" />
+      <motion.circle
+        cx="28" cy="28" r={r} fill="none" strokeWidth="3"
+        stroke="var(--page-studio-accent)" strokeLinecap="round"
+        strokeDasharray={circ}
+        initial={{ strokeDashoffset: circ }}
+        animate={{ strokeDashoffset: circ - (pct / 100) * circ }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      />
+    </svg>
+  );
+}
+
+/* ─── AI Label Chip ───────────────────────────────────────── */
+function AiLabelChip({ label, color }: { label: string; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+      style={{ background: `${color}dd` }}
+    >
+      <Sparkles className="size-3" />
+      {label}
+    </motion.div>
+  );
+}
+
+/* ─── Portrait Upload Zone ────────────────────────────────── */
+function PortraitZone({
+  previewUrl,
+  isUploading,
+  onFile,
+  onRemove,
+}: {
+  previewUrl: string | null;
+  isUploading: boolean;
+  onFile: (f: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  return (
+    <div className="relative mx-auto max-w-[240px]">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }}
+      />
+
+      <motion.div
+        whileHover={!previewUrl ? { scale: 1.02 } : {}}
+        whileTap={!previewUrl ? { scale: 0.98 } : {}}
+        onClick={() => { if (!previewUrl && !isUploading) inputRef.current?.click(); }}
+        onDragOver={(e) => { e.preventDefault(); if (!previewUrl) setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault(); setIsDragOver(false);
+          const f = e.dataTransfer.files[0];
+          if (f && !previewUrl && !isUploading) onFile(f);
+        }}
+        className={[
+          "relative flex aspect-[3/4] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[var(--radius-2xl)] transition-all duration-200",
+          previewUrl
+            ? "cursor-default"
+            : isDragOver
+              ? "border-2 border-dashed border-[var(--page-studio-accent)] bg-[var(--page-studio-accent-bg)] shadow-soft-md scale-[1.02]"
+              : "border-2 border-dashed border-border/70 bg-muted/30 hover:border-[var(--page-studio-accent)]/60 hover:bg-[var(--page-studio-accent-bg)] hover:shadow-soft-sm",
+        ].join(" ")}
+      >
+        <AnimatePresence mode="wait">
+          {previewUrl ? (
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewUrl} alt="Portrait" className="h-full w-full object-cover" />
+              {/* Success overlay */}
+              <div className="absolute inset-0 flex flex-col items-end justify-between bg-gradient-to-t from-black/30 via-transparent to-transparent p-3">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className="flex size-7 items-center justify-center rounded-full bg-emerald-500 shadow-sm"
+                >
+                  <Check className="size-4 text-white" />
+                </motion.div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                  className="flex size-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-colors"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          ) : isUploading ? (
+            <motion.div key="uploading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3">
+              <ProgressRing pct={65} />
+              <p className="text-xs text-muted-foreground">Uploading…</p>
+            </motion.div>
+          ) : (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 px-4 text-center">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-[var(--page-studio-accent-bg)]">
+                <Camera className="size-6 text-[var(--page-studio-accent)]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Upload portrait</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Full-body photo recommended</p>
+              </div>
+              {isDragOver && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-xs font-semibold text-[var(--page-studio-accent)]"
+                >
+                  Drop to upload
+                </motion.p>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ─── Garment Card ────────────────────────────────────────── */
+function GarmentCard({
+  slot,
+  previewUrl,
+  label,
+  isUploading,
+  isClassifying,
+  onFile,
+  onRemove,
+}: {
+  slot: GarmentStudioSlot;
+  previewUrl: string | null;
+  label: string | null;
+  isUploading: boolean;
+  isClassifying: boolean;
+  onFile: (f: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const meta = SLOT_META[slot];
+  const isLoading = isUploading || isClassifying;
+  const displayLabel = label ?? meta.label;
+
+  return (
+    <motion.div variants={staggerItem} layout className="flex flex-col gap-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }}
+      />
+
+      <div
+        onClick={() => { if (!previewUrl && !isLoading) inputRef.current?.click(); }}
+        onDragOver={(e) => { e.preventDefault(); if (!previewUrl) setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault(); setIsDragOver(false);
+          const f = e.dataTransfer.files[0];
+          if (f && !previewUrl && !isLoading) onFile(f);
+        }}
+        className={[
+          "relative flex aspect-[3/4] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[var(--radius-xl)] transition-all duration-200",
+          previewUrl
+            ? "cursor-default"
+            : isDragOver
+              ? "border-2 border-dashed border-[var(--page-studio-accent)] bg-[var(--page-studio-accent-bg)]"
+              : "border-2 border-dashed border-border/70 bg-muted/30 hover:border-[var(--page-studio-accent)]/50 hover:bg-muted/50",
+        ].join(" ")}
+      >
+        <AnimatePresence mode="wait">
+          {previewUrl ? (
+            <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewUrl} alt={displayLabel} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              <div className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-emerald-500">
+                <Check className="size-3.5 text-white" />
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="absolute bottom-2 right-2 flex size-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-colors"
+              >
+                <X className="size-3" />
+              </button>
+            </motion.div>
+          ) : isLoading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2">
+              <div className="relative">
+                <ProgressRing pct={isClassifying ? 80 : 50} />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Sparkles className="size-4 text-[var(--page-studio-accent)]" />
+                </motion.div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {isClassifying ? "AI detecting…" : "Uploading…"}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 px-3 text-center">
+              <div
+                className="flex size-10 items-center justify-center rounded-xl"
+                style={{ background: `${meta.color}22` }}
+              >
+                <Plus className="size-5" style={{ color: meta.color }} />
+              </div>
+              <p className="text-xs font-medium text-muted-foreground">Add piece</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Label chip row */}
+      <div className="flex items-center justify-between px-1">
+        <AnimatePresence>
+          {previewUrl && label ? (
+            <AiLabelChip label={label} color={meta.color} />
+          ) : (
+            <p className="text-xs text-muted-foreground">{meta.label}</p>
+          )}
+        </AnimatePresence>
+        {previewUrl && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-0.5 text-[10px] font-medium text-emerald-600"
+          >
+            <CheckCircle2 className="size-3" />
+            Ready
+          </motion.span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Step Indicator ──────────────────────────────────────── */
+function StepBar({ step }: { step: 1 | 2 | 3 }) {
+  const steps = [
+    { n: 1, label: "Portrait" },
+    { n: 2, label: "Wardrobe" },
+    { n: 3, label: "Generate" },
+  ];
+  return (
+    <div className="flex items-center gap-2">
+      {steps.map((s, i) => (
+        <div key={s.n} className="flex items-center gap-2">
+          <div className={[
+            "flex size-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors duration-300",
+            step >= s.n
+              ? "bg-[var(--page-studio-accent)] text-white"
+              : "bg-muted text-muted-foreground",
+          ].join(" ")}>
+            {step > s.n ? <Check className="size-3" /> : s.n}
+          </div>
+          <span className={[
+            "hidden text-xs sm:inline transition-colors duration-300",
+            step >= s.n ? "font-semibold text-foreground" : "text-muted-foreground",
+          ].join(" ")}>
+            {s.label}
+          </span>
+          {i < steps.length - 1 && (
+            <ChevronRight className="size-3.5 text-muted-foreground/50 mx-0.5" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Main Component ──────────────────────────────────────── */
 export function StudioUploadExperience() {
   const router = useRouter();
   const { user } = useSession();
+
   const uploads = useDemoStore((s) => s.uploads);
   const uploadLabels = useDemoStore((s) => s.uploadLabels);
   const uploadFile = useDemoStore((s) => s.uploadFile);
@@ -45,277 +344,249 @@ export function StudioUploadExperience() {
   const isClassifyingGarment = useDemoStore((s) => s.isClassifyingGarment);
   const error = useDemoStore((s) => s.error);
   const isReady = useDemoStore((s) => s.isReadyToGenerate());
-  const uploadedGarmentCount = useDemoStore((s) => s.getUploadedGarmentCount());
+  const garmentCount = useDemoStore((s) => s.getUploadedGarmentCount());
 
-  const [addingGarment, setAddingGarment] = useState(false);
+  useEffect(() => { void initSession(); }, [initSession]);
 
-  useEffect(() => {
-    void initSession();
-  }, [initSession]);
+  const handleGenerate = () => { if (isReady) router.push(DEMO_ROUTES.generating); };
 
-  const handleGenerate = () => {
-    if (!isReady) return;
-    router.push(DEMO_ROUTES.generating);
-  };
-
-  const handlePortrait = async (file: File) => {
-    await uploadFile("userPhoto", file);
-  };
-
-  const handleGarment = async (file: File) => {
-    await uploadFile("auto", file);
-    setAddingGarment(false);
-  };
-
-  const uploadedGarments = GARMENT_SLOTS.filter((slot) => uploads[slot]);
-  const canAddMore = uploadedGarments.length < GARMENT_SLOTS.length;
-
-  const uploadedPreview = (
-    [
-      ["userPhoto", "You"],
-      ...uploadedGarments.map(
-        (slot) =>
-          [slot, uploadLabels[slot] ?? SLOT_FALLBACK_LABEL[slot]] as const,
-      ),
-    ] as [StudioSlot, string][]
-  ).filter(([slot]) => uploads[slot]);
-
-  const totalUploaded = uploadedPreview.length;
+  const currentStep: 1 | 2 | 3 = !uploads.userPhoto ? 1 : garmentCount === 0 ? 2 : 3;
+  const isAnyLoading = isClassifyingGarment || Object.values(isUploading).some(Boolean);
 
   return (
     <div className="page-ambient-studio min-h-screen">
-      <header className="sticky top-0 z-40 glass-strong">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+      {/* Header */}
+      <header className="sticky top-0 z-40 glass-strong border-b border-border/40">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link
             href={APP_ROUTES.dashboard}
-            className="flex items-center gap-2 text-sm text-foreground/70 transition hover:text-foreground"
+            className="flex items-center gap-1.5 text-sm text-foreground/60 transition hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Dashboard
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
-          <div className="flex items-center gap-2 text-foreground">
-            <Sparkles className="size-4 text-champagne" strokeWidth={1.5} />
-            <span className="text-heading-sm">Style Studio</span>
+
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-[var(--page-studio-accent-bg)]">
+              <Sparkles className="size-4 text-[var(--page-studio-accent)]" strokeWidth={1.5} />
+            </div>
+            <span className="text-sm font-semibold">Style Studio</span>
           </div>
-          <span className="text-sm text-foreground/70">
-            {user ? (
-              <span className="hidden truncate sm:inline">{user.email}</span>
-            ) : (
-              <Link
-                href={APP_ROUTES.login}
-                className="font-medium text-foreground transition hover:text-champagne"
-              >
-                Sign in
-              </Link>
-            )}
-            <span className="mx-2 hidden text-foreground/40 sm:inline">·</span>
-            <span className="hidden sm:inline">{totalUploaded} uploaded</span>
-            <span className="sm:hidden">{totalUploaded}</span>
-          </span>
+
+          <StepBar step={currentStep} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">
-        {error && (
-          <div className="glass-panel mb-6 rounded-[var(--radius-xl)] px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 md:py-14">
+        {/* Error banner */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              className="mb-6 overflow-hidden rounded-[var(--radius-xl)] border border-destructive/30 bg-destructive/8 px-4 py-3 text-sm text-destructive"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Page hero */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+          className="mb-10 text-center"
         >
           <HeadingLG>Build your look</HeadingLG>
-          <p className="mt-3 text-base text-foreground/75">
-            Upload your portrait and wardrobe pieces — AI detects each item type
-            automatically.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Upload your portrait + wardrobe pieces — AI labels each garment automatically.
+            Upload your portrait + wardrobe pieces — each slot is applied in one FASHN step (~1 credit per piece).
           </p>
+          {user && (
+            <p className="mt-1 text-xs text-muted-foreground/60">{user.email}</p>
+          )}
         </motion.div>
 
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="relative mt-12"
-        >
-          <Label className="mb-4 block text-champagne-foreground">
-            Your Photo
-          </Label>
-          <div className="relative mx-auto max-w-md">
-            {isUploading.userPhoto && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-2xl)] bg-white/60 backdrop-blur-sm">
-                <Loader2 className="size-8 animate-spin text-champagne" />
-              </div>
-            )}
-            <FashionUploadZone
-              label="Portrait or full-body photo"
-              hint="Required — saved securely"
+        {/* Two-column layout: portrait | garments */}
+        <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
+
+          {/* Portrait column */}
+          <motion.div
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+          >
+            <Label className="mb-3 flex items-center gap-2 text-champagne-foreground">
+              <Camera className="size-3.5" />
+              Your Portrait
+              {uploads.userPhoto && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-600"
+                >
+                  <CheckCircle2 className="size-3.5" />
+                  Added
+                </motion.span>
+              )}
+            </Label>
+            <PortraitZone
               previewUrl={uploads.userPhoto}
-              variant="accent"
-              disabled={isUploading.userPhoto}
-              onFileSelect={(file) => void handlePortrait(file)}
+              isUploading={isUploading.userPhoto}
+              onFile={(f) => void uploadFile("userPhoto", f)}
               onRemove={() => void removeUpload("userPhoto")}
             />
-          </div>
-        </motion.section>
+            {!uploads.userPhoto && (
+              <p className="mt-2 text-center text-[11px] text-muted-foreground/70">
+                Drag & drop or click to browse
+              </p>
+            )}
+          </motion.div>
 
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-16"
-        >
-          <Label className="mb-2 block text-champagne-foreground">
-            Wardrobe Pieces
-          </Label>
-          <p className="mb-6 flex items-center gap-2 text-sm text-foreground/70">
-            <ScanLine className="size-4 text-champagne" strokeWidth={1.5} />
-            AI labels each upload — dress, shoes, bag, and more.
-          </p>
+          {/* Garments column */}
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+          >
+            <Label className="mb-3 flex items-center gap-2 text-champagne-foreground">
+              <ScanLine className="size-3.5" />
+              Wardrobe Pieces
+              <span className="ml-auto text-xs text-muted-foreground">{garmentCount}/4 added</span>
+            </Label>
 
-          {uploadedGarments.length === 0 && !addingGarment && (
-            <p className="mb-4 text-sm text-foreground/60">
-              No pieces yet. Add at least one wardrobe item below.
-            </p>
-          )}
+            {/* AI classify hint */}
+            {garmentCount === 0 && !isClassifyingGarment && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--page-studio-accent)]/20 bg-[var(--page-studio-accent-bg)] px-3 py-2.5"
+              >
+                <Sparkles className="size-4 shrink-0 text-[var(--page-studio-accent)]" strokeWidth={1.5} />
+                <p className="text-xs text-muted-foreground">
+                  Drop into each slot — <strong className="text-foreground">kurta, shalwar, khussa, glasses</strong> — or use AI auto-detect
+                </p>
+              </motion.div>
+            )}
 
-          <div className="flex flex-wrap gap-4">
-            {uploadedGarments.map((slot) => {
-              const label = uploadLabels[slot] ?? SLOT_FALLBACK_LABEL[slot];
-              return (
-                <div
+            {/* Garment card grid */}
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
+            >
+              {GARMENT_SLOTS.map((slot) => (
+                <GarmentCard
                   key={slot}
-                  className="relative w-full max-w-[220px] flex-1 sm:w-auto"
-                >
-                  {isUploading[slot] && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[var(--radius-2xl)] bg-white/60 backdrop-blur-sm">
-                      <Loader2 className="size-6 animate-spin text-champagne" />
-                    </div>
-                  )}
-                  <FashionUploadZone
-                    label={label}
-                    hint="AI detected"
-                    previewUrl={uploads[slot]}
-                    variant="glass"
-                    disabled={isUploading[slot]}
-                    onFileSelect={(file) => void uploadFile("auto", file)}
-                    onRemove={() => void removeUpload(slot)}
-                  />
-                </div>
-              );
-            })}
+                  slot={slot}
+                  previewUrl={uploads[slot]}
+                  label={uploadLabels[slot]}
+                  isUploading={isUploading[slot]}
+                  isClassifying={false}
+                  onFile={(f) => void uploadFile(slot, f)}
+                  onRemove={() => void removeUpload(slot)}
+                />
+              ))}
+            </motion.div>
 
+            {/* "All garments detected" banner */}
             <AnimatePresence>
-              {addingGarment && (
+              {garmentCount === 4 && (
                 <motion.div
-                  key="add-garment"
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  className="relative w-full max-w-[220px] flex-1 sm:w-auto"
+                  initial={{ opacity: 0, y: 6, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 overflow-hidden"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setAddingGarment(false)}
-                    className="absolute -top-2 -right-2 z-20 flex size-7 items-center justify-center rounded-full bg-foreground text-background shadow-soft-sm"
-                    aria-label="Cancel add"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                  {(isClassifyingGarment || isUploading.dress || isUploading.shoes || isUploading.accessories) && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-2xl)] bg-white/70 backdrop-blur-sm">
-                      <Loader2 className="size-6 animate-spin text-champagne" />
-                      <span className="text-xs text-foreground/70">
-                        Detecting item…
-                      </span>
-                    </div>
-                  )}
-                  <FashionUploadZone
-                    label="Wardrobe piece"
-                    hint="Photo of clothing or accessory"
-                    previewUrl={null}
-                    variant="glass"
-                    disabled={isClassifyingGarment}
-                    onFileSelect={(file) => void handleGarment(file)}
-                  />
+                  <div className="flex items-center gap-2 rounded-[var(--radius-lg)] bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                    <CheckCircle2 className="size-4" />
+                    Full wardrobe set — ready to generate!
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
+        </div>
 
-          {canAddMore && !addingGarment && (
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setAddingGarment(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background px-5 py-2.5 text-sm font-medium text-foreground shadow-soft-xs transition hover:bg-muted/50"
-              >
-                <Plus className="size-4" />
-                Add wardrobe piece
-              </button>
-            </div>
+        {/* Upload summary strip */}
+        <AnimatePresence>
+          {(uploads.userPhoto || garmentCount > 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-10 glass-panel rounded-[var(--radius-2xl)] p-4"
+            >
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Your uploads · {(uploads.userPhoto ? 1 : 0) + garmentCount} piece{(uploads.userPhoto ? 1 : 0) + garmentCount !== 1 ? "s" : ""}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {(["userPhoto", ...GARMENT_SLOTS] as (StudioSlot | GarmentStudioSlot)[]).map((slot) => {
+                  const url = uploads[slot as keyof typeof uploads];
+                  if (!url) return null;
+                  const label = slot === "userPhoto" ? "Portrait" : (uploadLabels[slot as GarmentStudioSlot] ?? SLOT_META[slot as GarmentStudioSlot]?.label ?? slot);
+                  return (
+                    <motion.div
+                      key={slot}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      layout
+                      className="relative size-16 overflow-hidden rounded-[var(--radius-lg)] ring-1 ring-border/40"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={label} className="h-full w-full object-cover" />
+                      <span className="absolute inset-x-0 bottom-0 bg-black/50 py-0.5 text-center text-[9px] font-medium text-white backdrop-blur-sm">
+                        {label}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
           )}
-        </motion.section>
+        </AnimatePresence>
 
-        {uploadedPreview.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="glass-panel mt-12 rounded-[var(--radius-2xl)] p-6"
-          >
-            <Label className="text-foreground/70 normal-case tracking-widest">
-              Your uploads ({uploadedPreview.length})
-            </Label>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {uploadedPreview.map(([slot, label]) => (
-                <div
-                  key={slot}
-                  className="relative h-28 w-24 overflow-hidden rounded-[var(--radius-xl)] shadow-soft-sm ring-1 ring-border/40"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={uploads[slot]!}
-                    alt={label}
-                    className="h-full w-full object-cover"
-                  />
-                  <span className="absolute inset-x-0 bottom-0 bg-black/50 py-1 text-center text-[11px] font-medium text-white backdrop-blur-sm">
-                    {label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.section>
-        )}
-
+        {/* Generate CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-12 flex flex-col items-center gap-4"
+          className="mt-10 flex flex-col items-center gap-3"
         >
-          <FashionButton
-            size="pill-lg"
-            disabled={
-              !isReady ||
-              isClassifyingGarment ||
-              Object.values(isUploading).some(Boolean)
-            }
-            onClick={handleGenerate}
+          <motion.div
+            whileHover={isReady && !isAnyLoading ? { scale: 1.03 } : {}}
+            whileTap={isReady && !isAnyLoading ? { scale: 0.97 } : {}}
           >
-            <Wand2 className="size-5" />
-            Generate Outfit
-          </FashionButton>
-          {!isReady && (
-            <p className="text-center text-sm text-foreground/70">
+            <FashionButton
+              size="pill-lg"
+              disabled={!isReady || isAnyLoading}
+              onClick={handleGenerate}
+              className="gap-3 px-10"
+            >
+              <Wand2 className="size-5" />
+              Generate Outfit
+            </FashionButton>
+          </motion.div>
+
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={currentStep}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-sm text-muted-foreground"
+            >
               {!uploads.userPhoto
-                ? "Add your portrait to continue"
-                : uploadedGarmentCount === 0
-                  ? "Add at least one wardrobe piece"
-                  : "Ready when you are — add more pieces anytime"}
-            </p>
-          )}
+                ? "← Start by uploading your portrait"
+                : garmentCount === 0
+                  ? "Now add at least one wardrobe piece →"
+                  : isAnyLoading
+                    ? "Processing your images…"
+                    : `${garmentCount} garment${garmentCount !== 1 ? "s" : ""} ready · tap Generate when done`}
+            </motion.p>
+          </AnimatePresence>
         </motion.div>
       </main>
     </div>

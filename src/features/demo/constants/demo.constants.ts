@@ -1,4 +1,4 @@
-export type DemoGarmentSlot = "dress" | "shoes" | "accessories";
+export type DemoGarmentSlot = "dress" | "bottoms" | "shoes" | "accessories";
 
 export interface DemoUpload {
   slot: "userPhoto" | DemoGarmentSlot;

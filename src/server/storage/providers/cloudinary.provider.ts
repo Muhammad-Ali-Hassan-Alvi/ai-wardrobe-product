@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { cloudinaryConfig } from "@/config/cloudinary";
 import { env } from "@/config/env";
+import { getErrorMessage } from "@/shared/utils/error-message";
 import type {
   StorageProvider,
   TransformOptions,
@@ -76,7 +77,11 @@ export class CloudinaryStorageProvider implements StorageProvider {
         },
         (error, result) => {
           if (error || !result) {
-            reject(error ?? new Error("Cloudinary upload failed"));
+            const message = getErrorMessage(
+              error,
+              "Cloudinary upload failed",
+            );
+            reject(new Error(message));
             return;
           }
           resolve({

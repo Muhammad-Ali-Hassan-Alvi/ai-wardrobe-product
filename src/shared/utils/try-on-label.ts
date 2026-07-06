@@ -11,6 +11,7 @@ export function resolveTryOnKind(aiProvider: string | null | undefined): TryOnKi
   }
   if (
     aiProvider.includes("fal") ||
+    aiProvider.includes("fashn") ||
     aiProvider.includes("gemini-image") ||
     aiProvider.includes("+gemini")
   ) {

@@ -18,6 +18,7 @@ export async function GET() {
     geminiTryOnModel: getResolvedGeminiTryOnModel(env.GEMINI_TRYON_MODEL),
     allowTryOnCompositeFallback: env.ALLOW_TRYON_COMPOSITE_FALLBACK === "true",
     falConfigured: Boolean(env.FAL_API_KEY),
+    fashnConfigured: Boolean(env.FASHN_API_KEY),
     falTryOnModel: env.FAL_TRYON_MODEL ?? "fal-ai/fashn/tryon/v1.6",
     defaults: {
       textModel: aiConfig.providers.gemini.model,
@@ -34,6 +35,7 @@ export async function GET() {
       tryOnModel: "GEMINI_TRYON_MODEL",
       compositeFallback: "ALLOW_TRYON_COMPOSITE_FALLBACK",
       falApiKey: "FAL_API_KEY",
+      fashnApiKey: "FASHN_API_KEY",
       apiKey: "GOOGLE_GENERATIVE_AI_API_KEY",
     },
   });

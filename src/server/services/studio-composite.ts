@@ -17,8 +17,18 @@ function overlayId(publicId: string) {
   return publicId.replace(/\//g, ":");
 }
 
+function isEyewear(label?: string) {
+  if (!label) return false;
+  return /glass|sunglass|eyewear|goggle|aviator|spectacle/i.test(label);
+}
+
 /** Per-slot overlay placement on the portrait (approximate body regions). */
-function slotLayer(slot: UploadSlot, publicId: string, index: number) {
+function slotLayer(
+  slot: UploadSlot,
+  publicId: string,
+  index: number,
+  label?: string,
+) {
   const id = overlayId(publicId);
   switch (slot) {
     case "DRESS":
@@ -28,6 +38,15 @@ function slotLayer(slot: UploadSlot, publicId: string, index: number) {
         crop: "fit" as const,
         gravity: "center" as const,
         y: 60,
+        opacity: 92,
+      };
+    case "BOTTOMS":
+      return {
+        overlay: id,
+        width: 380,
+        crop: "fit" as const,
+        gravity: "south" as const,
+        y: 180,
         opacity: 92,
       };
     case "SHOES":
@@ -40,6 +59,16 @@ function slotLayer(slot: UploadSlot, publicId: string, index: number) {
         opacity: 95,
       };
     case "ACCESSORIES":
+      if (isEyewear(label)) {
+        return {
+          overlay: id,
+          width: 200,
+          crop: "fit" as const,
+          gravity: "north" as const,
+          y: 88,
+          opacity: 95,
+        };
+      }
       return {
         overlay: id,
         width: 160,
@@ -62,6 +91,53 @@ function slotLayer(slot: UploadSlot, publicId: string, index: number) {
 }
 
 /**
+ * Portrait URL with optional AI background removal (Cloudinary add-on).
+ */
+export function preparePortraitForTryOn(publicId: string): string {
+  ensureCloudinaryConfig();
+
+  if (env.REMOVE_PORTRAIT_BACKGROUND !== "true") {
+    return cloudinary.url(publicId, {
+      secure: true,
+      transformation: [
+        { width: 900, height: 1200, crop: "fill", gravity: "auto", quality: "auto" },
+      ],
+    });
+  }
+
+  return cloudinary.url(publicId, {
+    secure: true,
+    transformation: [
+      { effect: "background_removal" },
+      { background: "#f4ede6" },
+      { width: 900, height: 1200, crop: "fill", gravity: "auto", quality: "auto" },
+    ],
+  });
+}
+
+/**
+ * Overlays garments onto an image already stored in Cloudinary (by public ID).
+ */
+export function compositeGarmentsOnPublicId(
+  basePublicId: string,
+  garments: Array<{ publicId: string; slot: UploadSlot; label?: string }>,
+): string {
+  ensureCloudinaryConfig();
+
+  const layers = garments.map((g, index) =>
+    slotLayer(g.slot, g.publicId, index, g.label),
+  );
+
+  return cloudinary.url(basePublicId, {
+    secure: true,
+    transformation: [
+      { width: 900, height: 1200, crop: "limit", quality: "auto" },
+      ...layers,
+    ],
+  });
+}
+
+/**
  * Overlays uploaded garments onto the portrait at body regions.
  * Fallback when dedicated VTO APIs are unavailable — not photorealistic.
  */
@@ -69,16 +145,28 @@ export function buildCompositeTryOnUrl(
   portraitPublicId: string,
   garmentPublicIds: string[],
   garmentSlots?: UploadSlot[],
+  garmentLabels?: string[],
 ): string {
   ensureCloudinaryConfig();
 
   const layers = garmentPublicIds.map((publicId, index) =>
-    slotLayer(garmentSlots?.[index] ?? "DRESS", publicId, index),
+    slotLayer(
+      garmentSlots?.[index] ?? "DRESS",
+      publicId,
+      index,
+      garmentLabels?.[index],
+    ),
   );
 
   return cloudinary.url(portraitPublicId, {
     secure: true,
     transformation: [
+      ...(env.REMOVE_PORTRAIT_BACKGROUND === "true"
+        ? [
+            { effect: "background_removal" },
+            { background: "#f4ede6" },
+          ]
+        : []),
       { width: 900, height: 1200, crop: "fill", quality: "auto" },
       ...layers,
     ],

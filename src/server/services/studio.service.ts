@@ -7,6 +7,7 @@ import { createRepositories } from "../db/repositories";
 import type { UploadRecord } from "../db/repositories";
 import { getStorageService } from "../storage";
 import type { UploadSlot } from "@/generated/prisma/client";
+import { getErrorMessage } from "@/shared/utils/error-message";
 import { classifyGarmentImage } from "./garment-classifier.service";
 
 export const outfitAnalysisSchema = z.object({
@@ -22,6 +23,7 @@ export type OutfitAnalysis = z.infer<typeof outfitAnalysisSchema>;
 const SLOT_LABELS: Record<UploadSlot, string> = {
   USER_PHOTO: "portrait photo",
   DRESS: "main garment",
+  BOTTOMS: "bottom wear",
   SHOES: "footwear",
   ACCESSORIES: "accessory",
 };
@@ -73,10 +75,20 @@ export class StudioService {
       mimeType,
     });
 
+    let label = detectedLabel ?? null;
+    if (!label && slot !== "USER_PHOTO") {
+      try {
+        const classification = await classifyGarmentImage(asset.url);
+        label = classification.label;
+      } catch {
+        // non-fatal — slot label fallback used in try-on
+      }
+    }
+
     return this.repos.upload.upsert(userId, slot, {
       cloudinaryPublicId: asset.publicId,
       secureUrl: asset.url,
-      detectedLabel: detectedLabel ?? null,
+      detectedLabel: label,
       width: asset.width ?? null,
       height: asset.height ?? null,
       format: asset.format ?? null,
@@ -186,25 +198,42 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     });
 
     if (tryOnResult.resultBuffer) {
-      const asset = await this.storage.uploadBuffer(tryOnResult.resultBuffer, {
-        folder: `${cloudinaryConfig.folders.tryOn}/${userId}`,
-        publicId: `outfit_${outfitId}`,
-        mimeType: tryOnResult.resultMimeType ?? "image/png",
-      });
-      return {
-        resultImageUrl: asset.url,
-        resultPublicId: asset.publicId,
-        provider: tryOnResult.provider,
-        previewNote: tryOnResult.previewNote,
-      };
+      if (tryOnResult.resultBuffer.length < 256) {
+        throw new Error("Try-on image from FASHN was empty or invalid");
+      }
+
+      try {
+        const asset = await this.storage.uploadBuffer(tryOnResult.resultBuffer, {
+          folder: `${cloudinaryConfig.folders.tryOn}/${userId}`,
+          publicId: `outfit_${outfitId}`,
+          mimeType: tryOnResult.resultMimeType ?? "image/png",
+        });
+
+        return {
+          resultImageUrl: asset.url,
+          resultPublicId: asset.publicId,
+          provider: tryOnResult.provider,
+          previewNote: tryOnResult.previewNote,
+        };
+      } catch (uploadError) {
+        const detail = getErrorMessage(uploadError);
+        console.error(
+          "[studio] Cloudinary try-on upload failed:",
+          detail,
+          `bytes=${tryOnResult.resultBuffer.length}`,
+        );
+        throw new Error(`Failed to save try-on image: ${detail}`);
+      }
     }
 
     if (tryOnResult.resultUrl) {
-      const isRemote =
+      const needsPersist =
         tryOnResult.isRealTryOn &&
-        !tryOnResult.resultUrl.includes("res.cloudinary.com");
+        (tryOnResult.resultUrl.includes("cdn.fashn.ai") ||
+          tryOnResult.resultUrl.includes("/image/fetch/") ||
+          !tryOnResult.resultUrl.includes("res.cloudinary.com"));
 
-      if (isRemote) {
+      if (needsPersist) {
         const res = await fetch(tryOnResult.resultUrl);
         if (res.ok) {
           const buffer = Buffer.from(await res.arrayBuffer());
@@ -214,6 +243,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
             publicId: `outfit_${outfitId}`,
             mimeType,
           });
+
           return {
             resultImageUrl: asset.url,
             resultPublicId: asset.publicId,
@@ -303,8 +333,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         processingMs,
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Generation failed";
+      const message = getErrorMessage(error, "Generation failed");
       await this.repos.outfit.update(outfit.id, userId, {
         status: "FAILED",
         errorMessage: message,

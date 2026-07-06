@@ -1,9 +1,10 @@
 import type { DemoOutfitResult } from "../constants/demo.constants";
 import { resolveTryOnKind } from "@/shared/utils/try-on-label";
+import { getErrorMessage } from "@/shared/utils/error-message";
 
-export type StudioSlot = "userPhoto" | "dress" | "shoes" | "accessories";
+export type StudioSlot = "userPhoto" | "dress" | "bottoms" | "shoes" | "accessories";
 
-export type GarmentStudioSlot = "dress" | "shoes" | "accessories";
+export type GarmentStudioSlot = "dress" | "bottoms" | "shoes" | "accessories";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -39,7 +40,12 @@ async function request<T>(
   const res = await fetch(path, { credentials: "include", ...init });
   const json = (await res.json()) as ApiResponse<T>;
   if (!json.success || !json.data) {
-    throw new Error(json.error ?? "Request failed");
+    const err = json.error;
+    const message =
+      typeof err === "string"
+        ? err
+        : getErrorMessage(err, "Request failed");
+    throw new Error(message);
   }
   return json.data;
 }
@@ -96,6 +102,7 @@ export function mapOutfitToResult(outfit: OutfitDto): DemoOutfitResult {
 const SLOT_FROM_API: Record<string, StudioSlot> = {
   USER_PHOTO: "userPhoto",
   DRESS: "dress",
+  BOTTOMS: "bottoms",
   SHOES: "shoes",
   ACCESSORIES: "accessories",
 };
@@ -104,12 +111,14 @@ export function uploadsToMap(uploads: UploadDto[]) {
   const map = {
     userPhoto: null as string | null,
     dress: null as string | null,
+    bottoms: null as string | null,
     shoes: null as string | null,
     accessories: null as string | null,
   };
   const labels = {
     userPhoto: null as string | null,
     dress: null as string | null,
+    bottoms: null as string | null,
     shoes: null as string | null,
     accessories: null as string | null,
   };

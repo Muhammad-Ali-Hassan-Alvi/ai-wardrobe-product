@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { APP_ROUTES } from "@/shared/constants/routes";
+import { PageTransition } from "./page-transition";
 
 const MAIN_AMBIENT_BY_PATH: Partial<Record<string, string>> = {
   [APP_ROUTES.dashboard]: "page-ambient-dashboard",
@@ -19,7 +20,7 @@ export function AppMain({ children }: { children: React.ReactNode }) {
         ambientClass ?? "bg-background",
       )}
     >
-      {children}
+      <PageTransition>{children}</PageTransition>
     </main>
   );
 }

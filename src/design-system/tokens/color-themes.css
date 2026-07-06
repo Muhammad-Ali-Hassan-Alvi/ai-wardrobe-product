@@ -98,3 +98,98 @@
   --glass-bg: oklch(1 0.025 340 / 74%);
   --glass-bg-strong: oklch(1 0.025 340 / 92%);
 }
+
+/* ── Dark mode theme ─────────────────────────────────────── */
+[data-color-theme="dark"] {
+  color-scheme: dark;
+
+  --background: oklch(0.16 0.012 265);
+  --foreground: oklch(0.94 0.008 265);
+
+  --card: oklch(0.19 0.014 265);
+  --card-foreground: oklch(0.94 0.008 265);
+
+  --popover: oklch(0.21 0.016 265);
+  --popover-foreground: oklch(0.94 0.008 265);
+
+  --primary: oklch(0.72 0.18 340);
+  --primary-foreground: oklch(0.14 0.01 340);
+
+  --secondary: oklch(0.24 0.018 265);
+  --secondary-foreground: oklch(0.88 0.01 265);
+
+  --muted: oklch(0.22 0.016 265);
+  --muted-foreground: oklch(0.58 0.02 265);
+
+  --accent: oklch(0.26 0.022 265);
+  --accent-foreground: oklch(0.9 0.01 265);
+
+  --destructive: oklch(0.65 0.22 25);
+
+  --border: oklch(0.28 0.018 265);
+  --input: oklch(0.25 0.016 265);
+  --ring: oklch(0.72 0.18 340 / 60%);
+
+  /* Champagne / brand accent — warm pink */
+  --champagne: oklch(0.72 0.18 340);
+  --champagne-muted: oklch(0.26 0.06 340);
+  --champagne-foreground: oklch(0.85 0.14 340);
+  --champagne-glow: oklch(0.6 0.2 340 / 28%);
+
+  --theme-glow-accent: oklch(0.5 0.2 340 / 25%);
+  --theme-glow-bottom: oklch(0.45 0.18 330 / 20%);
+
+  /* Landing chrome */
+  --landing-nav-bg: oklch(0.18 0.014 265 / 92%);
+  --landing-nav-border: oklch(0.32 0.02 265 / 60%);
+  --landing-footer-bg: oklch(0.17 0.012 265 / 96%);
+  --landing-footer-border: oklch(0.3 0.018 265 / 50%);
+
+  /* Page ambients */
+  --page-dashboard-bg: oklch(0.17 0.016 275);
+  --page-dashboard-glow-a: oklch(0.4 0.12 275 / 18%);
+  --page-dashboard-glow-b: oklch(0.38 0.1 255 / 15%);
+  --page-dashboard-glow-c: oklch(0.35 0.08 290 / 12%);
+  --page-dashboard-accent: oklch(0.65 0.16 275);
+  --page-dashboard-accent-bg: oklch(0.25 0.08 275 / 60%);
+
+  --page-studio-bg: oklch(0.17 0.014 35);
+  --page-studio-glow-a: oklch(0.42 0.15 45 / 18%);
+  --page-studio-glow-b: oklch(0.38 0.12 25 / 15%);
+  --page-studio-glow-c: oklch(0.35 0.1 55 / 12%);
+  --page-studio-accent: oklch(0.72 0.18 340);
+  --page-studio-accent-bg: oklch(0.26 0.09 340 / 60%);
+
+  /* Surfaces */
+  --surface-base: oklch(0.16 0.012 265);
+  --surface-raised: oklch(0.2 0.016 265);
+  --surface-sunken: oklch(0.14 0.01 265);
+  --surface-overlay: oklch(0.2 0.016 265 / 96%);
+
+  /* Glass — dark frosted */
+  --glass-bg: oklch(0.22 0.018 265 / 70%);
+  --glass-bg-strong: oklch(0.24 0.02 265 / 88%);
+  --glass-border: oklch(1 0 0 / 6%);
+  --glass-border-subtle: oklch(1 0 0 / 8%);
+  --glass-blur: 24px;
+  --glass-blur-strong: 40px;
+
+  /* Sidebar */
+  --sidebar: oklch(0.18 0.014 265);
+  --sidebar-foreground: oklch(0.9 0.008 265);
+  --sidebar-primary: oklch(0.72 0.18 340);
+  --sidebar-primary-foreground: oklch(0.14 0.01 340);
+  --sidebar-accent: oklch(0.24 0.02 265);
+  --sidebar-accent-foreground: oklch(0.9 0.008 265);
+  --sidebar-border: oklch(0.26 0.018 265);
+  --sidebar-ring: oklch(0.72 0.18 340 / 40%);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 30%);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 36%), 0 1px 2px oklch(0 0 0 / 24%);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 40%), 0 2px 4px oklch(0 0 0 / 24%);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 48%), 0 4px 8px oklch(0 0 0 / 24%);
+  --shadow-xl: 0 24px 48px oklch(0 0 0 / 52%), 0 8px 16px oklch(0 0 0 / 28%);
+  --shadow-float: 0 20px 40px oklch(0 0 0 / 48%), 0 0 0 1px oklch(1 0 0 / 6%);
+  --shadow-glow: 0 0 48px oklch(0.6 0.2 340 / 24%);
+}

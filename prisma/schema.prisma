@@ -12,6 +12,7 @@ datasource db {
 enum UploadSlot {
   USER_PHOTO
   DRESS
+  BOTTOMS
   SHOES
   ACCESSORIES
 }

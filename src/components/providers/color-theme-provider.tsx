@@ -22,4 +22,5 @@ export const COLOR_THEMES: {
   { id: "rose", label: "White & rose", swatch: "#e8a4a8" },
   { id: "baby-pink", label: "Baby pink", swatch: "#f4c2d7" },
   { id: "blush", label: "Light blush", swatch: "#f9d5e5" },
+  { id: "dark", label: "Dark mode", swatch: "#1e1b2e" },
 ];

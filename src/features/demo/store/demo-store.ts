@@ -15,10 +15,12 @@ import {
   uploadsToMap,
   type StudioSlot,
 } from "../api/studio-api";
+import { getErrorMessage } from "@/shared/utils/error-message";
 
 type UploadMap = {
   userPhoto: string | null;
   dress: string | null;
+  bottoms: string | null;
   shoes: string | null;
   accessories: string | null;
 };
@@ -49,6 +51,7 @@ interface DemoStore {
 const emptyLabels = (): LabelMap => ({
   userPhoto: null,
   dress: null,
+  bottoms: null,
   shoes: null,
   accessories: null,
 });
@@ -56,6 +59,7 @@ const emptyLabels = (): LabelMap => ({
 const API_SLOT_TO_STUDIO: Record<string, StudioSlot> = {
   USER_PHOTO: "userPhoto",
   DRESS: "dress",
+  BOTTOMS: "bottoms",
   SHOES: "shoes",
   ACCESSORIES: "accessories",
 };
@@ -63,9 +67,12 @@ const API_SLOT_TO_STUDIO: Record<string, StudioSlot> = {
 const emptyUploads = (): UploadMap => ({
   userPhoto: null,
   dress: null,
+  bottoms: null,
   shoes: null,
   accessories: null,
 });
+
+const GARMENT_SLOT_KEYS = ["dress", "bottoms", "shoes", "accessories"] as const;
 
 export const useDemoStore = create<DemoStore>()(
   devtools(
@@ -78,6 +85,7 @@ export const useDemoStore = create<DemoStore>()(
       isUploading: {
         userPhoto: false,
         dress: false,
+        bottoms: false,
         shoes: false,
         accessories: false,
       },
@@ -171,7 +179,7 @@ export const useDemoStore = create<DemoStore>()(
         } catch (e) {
           set({
             isGenerating: false,
-            error: e instanceof Error ? e.message : "Generation failed",
+            error: getErrorMessage(e, "Generation failed"),
           });
           throw e;
         }
@@ -197,20 +205,18 @@ export const useDemoStore = create<DemoStore>()(
       isReadyToGenerate: () => {
         const { uploads } = get();
         const hasPortrait = Boolean(uploads.userPhoto);
-        const garmentCount = ["dress", "shoes", "accessories"].filter(
-          (slot) => uploads[slot as keyof UploadMap],
+        const garmentCount = GARMENT_SLOT_KEYS.filter(
+          (slot) => uploads[slot],
         ).length;
         return hasPortrait && garmentCount >= 1;
       },
 
       getUploadedGarmentCount: () => {
         const { uploads } = get();
-        return ["dress", "shoes", "accessories"].filter(
-          (slot) => uploads[slot as keyof UploadMap],
-        ).length;
+        return GARMENT_SLOT_KEYS.filter((slot) => uploads[slot]).length;
       },
 
-      getGarmentSlots: () => ["dress", "shoes", "accessories"],
+      getGarmentSlots: () => [...GARMENT_SLOT_KEYS],
     }),
     { name: "demo-store" },
   ),
