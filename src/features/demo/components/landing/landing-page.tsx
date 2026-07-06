@@ -27,6 +27,7 @@ const Preview3DSection = dynamic(
   },
 );
 
+// Changes
 export function LandingPage() {
   return (
     <div className="page-ambient min-h-screen">
