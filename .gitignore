@@ -45,3 +45,6 @@ next-env.d.ts
 
 # generated Prisma client (built on postinstall / build)
 /src/generated
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
