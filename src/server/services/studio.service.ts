@@ -285,8 +285,11 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     }
 
     const garments = uploads.filter((u) => u.slot !== "USER_PHOTO");
-    if (garments.length === 0) {
-      throw new Error("Upload at least one wardrobe piece");
+    const activeGarments = garments.filter(
+      (u) => u.slot === "DRESS" || u.slot === "BOTTOMS",
+    );
+    if (activeGarments.length === 0) {
+      throw new Error("Upload a kurta or top (dress slot) for virtual try-on");
     }
 
     const start = Date.now();
@@ -298,10 +301,10 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     try {
       const imageUrls = [
         portrait.secureUrl,
-        ...garments.map((g) => g.secureUrl),
+        ...activeGarments.map((g) => g.secureUrl),
       ];
 
-      const garmentDescriptions = garments
+      const garmentDescriptions = activeGarments
         .map((g) => labelForUpload(g))
         .join(", ");
 
@@ -311,7 +314,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         userId,
         outfit.id,
         portrait,
-        garments,
+        activeGarments,
       );
 
       const highlights = tryOnImage.previewNote

@@ -1,5 +1,6 @@
 import type { UploadSlot } from "@/generated/prisma/client";
 import { apiError, apiSuccess } from "@/lib/api/response";
+import { getErrorMessage } from "@/shared/utils/error-message";
 import { getSessionUserId } from "@/lib/session/get-session-user";
 import { StudioService } from "@/server/services/studio.service";
 
@@ -18,10 +19,7 @@ export async function GET() {
     const uploads = await studio.listUploads(userId);
     return apiSuccess({ uploads });
   } catch (error) {
-    return apiError(
-      error instanceof Error ? error.message : "Failed to list uploads",
-      500,
-    );
+    return apiError(getErrorMessage(error, "Failed to list uploads"), 500);
   }
 }
 
@@ -60,10 +58,7 @@ export async function POST(request: Request) {
 
     return apiSuccess({ upload });
   } catch (error) {
-    return apiError(
-      error instanceof Error ? error.message : "Upload failed",
-      500,
-    );
+    return apiError(getErrorMessage(error, "Upload failed"), 500);
   }
 }
 
@@ -81,9 +76,6 @@ export async function DELETE(request: Request) {
     await studio.removeUpload(userId, slot);
     return apiSuccess({ removed: true });
   } catch (error) {
-    return apiError(
-      error instanceof Error ? error.message : "Delete failed",
-      500,
-    );
+    return apiError(getErrorMessage(error, "Delete failed"), 500);
   }
 }

@@ -278,12 +278,12 @@ export function ResultExperience() {
             className="relative"
           >
             <div className="glass-panel overflow-hidden rounded-[var(--radius-3xl)] shadow-soft-lg">
-              <div className="relative aspect-[3/4]">
+              <div className="relative aspect-[3/4] bg-[#f4ede6]">
                 <Image
                   src={result.imageUrl}
                   alt={result.title || "Virtual try-on preview"}
                   fill
-                  className="object-cover"
+                  className="object-contain object-center"
                   priority
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
@@ -410,7 +410,13 @@ export function ResultExperience() {
               </FashionButton>
               <DownloadButton imageUrl={result.imageUrl} title={result.title} />
               <FashionButton variant="outline" size="pill" asChild className="gap-2">
-                <Link href={APP_ROUTES.preview}>
+                <Link
+                  href={
+                    result.imageUrl
+                      ? `${APP_ROUTES.preview}?image=${encodeURIComponent(result.imageUrl)}`
+                      : APP_ROUTES.preview
+                  }
+                >
                   <Box className="size-4" />
                   3D Preview
                 </Link>

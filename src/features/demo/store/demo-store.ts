@@ -72,6 +72,7 @@ const emptyUploads = (): UploadMap => ({
   accessories: null,
 });
 
+const ACTIVE_GARMENT_SLOT_KEYS = ["dress", "bottoms"] as const;
 const GARMENT_SLOT_KEYS = ["dress", "bottoms", "shoes", "accessories"] as const;
 
 export const useDemoStore = create<DemoStore>()(
@@ -204,16 +205,12 @@ export const useDemoStore = create<DemoStore>()(
 
       isReadyToGenerate: () => {
         const { uploads } = get();
-        const hasPortrait = Boolean(uploads.userPhoto);
-        const garmentCount = GARMENT_SLOT_KEYS.filter(
-          (slot) => uploads[slot],
-        ).length;
-        return hasPortrait && garmentCount >= 1;
+        return Boolean(uploads.userPhoto && uploads.dress);
       },
 
       getUploadedGarmentCount: () => {
         const { uploads } = get();
-        return GARMENT_SLOT_KEYS.filter((slot) => uploads[slot]).length;
+        return ACTIVE_GARMENT_SLOT_KEYS.filter((slot) => uploads[slot]).length;
       },
 
       getGarmentSlots: () => [...GARMENT_SLOT_KEYS],

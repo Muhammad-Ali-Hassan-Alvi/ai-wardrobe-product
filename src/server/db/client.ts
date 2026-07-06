@@ -14,6 +14,10 @@ function createPrismaClient() {
     new Pool({
       connectionString: env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
+      // Fail fast instead of hanging 20s+ when Supabase pooler is waking up
+      connectionTimeoutMillis: 15_000,
+      idleTimeoutMillis: 30_000,
+      max: 10,
     });
   const adapter = new PrismaPg(pool);
 

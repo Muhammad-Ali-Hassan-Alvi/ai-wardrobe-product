@@ -10,6 +10,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  Clock,
   Layers,
   Plus,
   ScanLine,
@@ -17,6 +18,7 @@ import {
   Sparkles,
   Wand2,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { FashionButton, HeadingLG, Label } from "@/design-system";
 import { staggerContainer, staggerItem } from "@/design-system/motion/variants";
@@ -26,9 +28,11 @@ import { useDemoStore } from "../../store/demo-store";
 import { DEMO_ROUTES } from "../../constants/demo.constants";
 import type { GarmentStudioSlot, StudioSlot } from "../../api/studio-api";
 
-const GARMENT_SLOTS: GarmentStudioSlot[] = ["dress", "bottoms", "shoes", "accessories"];
+const ACTIVE_GARMENT_SLOTS: GarmentStudioSlot[] = ["dress", "bottoms"];
+const COMING_SOON_SLOTS: GarmentStudioSlot[] = ["shoes", "accessories"];
+const GARMENT_SLOTS: GarmentStudioSlot[] = [...ACTIVE_GARMENT_SLOTS, ...COMING_SOON_SLOTS];
 
-const SLOT_META: Record<GarmentStudioSlot, { label: string; icon: React.ElementType; color: string }> = {
+const SLOT_META: Record<GarmentStudioSlot, { label: string; icon: LucideIcon; color: string }> = {
   dress: { label: "Kurta / Top", icon: Shirt, color: "var(--page-studio-accent)" },
   bottoms: { label: "Shalwar / Bottom", icon: Layers, color: "#0d9488" },
   shoes: { label: "Footwear", icon: Sparkles, color: "var(--page-dashboard-accent)" },
@@ -181,6 +185,7 @@ function GarmentCard({
   label,
   isUploading,
   isClassifying,
+  comingSoon = false,
   onFile,
   onRemove,
 }: {
@@ -189,14 +194,42 @@ function GarmentCard({
   label: string | null;
   isUploading: boolean;
   isClassifying: boolean;
+  comingSoon?: boolean;
   onFile: (f: File) => void;
   onRemove: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const meta = SLOT_META[slot];
+  const slotMeta = SLOT_META[slot];
+  const Icon = slotMeta.icon;
   const isLoading = isUploading || isClassifying;
-  const displayLabel = label ?? meta.label;
+  const displayLabel = label ?? slotMeta.label;
+
+  if (comingSoon) {
+    return (
+      <motion.div variants={staggerItem} layout className="flex flex-col gap-2">
+        <div
+          className="relative flex aspect-[3/4] flex-col items-center justify-center overflow-hidden rounded-[var(--radius-xl)] border-2 border-dashed border-border/40 bg-muted/20 opacity-75"
+          title="Coming soon"
+        >
+          <div
+            className="flex size-10 items-center justify-center rounded-xl"
+            style={{ background: `${slotMeta.color}18` }}
+          >
+            <Icon className="size-5 opacity-40" style={{ color: slotMeta.color }} />
+          </div>
+          <p className="mt-2 px-2 text-center text-xs font-medium text-muted-foreground">
+            {slotMeta.label}
+          </p>
+          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Clock className="size-3" />
+            Coming soon
+          </span>
+        </div>
+        <p className="px-1 text-xs text-muted-foreground/60">{slotMeta.label}</p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div variants={staggerItem} layout className="flex flex-col gap-2">
@@ -262,9 +295,9 @@ function GarmentCard({
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 px-3 text-center">
               <div
                 className="flex size-10 items-center justify-center rounded-xl"
-                style={{ background: `${meta.color}22` }}
+                style={{ background: `${slotMeta.color}22` }}
               >
-                <Plus className="size-5" style={{ color: meta.color }} />
+                <Plus className="size-5" style={{ color: slotMeta.color }} />
               </div>
               <p className="text-xs font-medium text-muted-foreground">Add piece</p>
             </motion.div>
@@ -276,9 +309,9 @@ function GarmentCard({
       <div className="flex items-center justify-between px-1">
         <AnimatePresence>
           {previewUrl && label ? (
-            <AiLabelChip label={label} color={meta.color} />
+            <AiLabelChip label={label} color={slotMeta.color} />
           ) : (
-            <p className="text-xs text-muted-foreground">{meta.label}</p>
+            <p className="text-xs text-muted-foreground">{slotMeta.label}</p>
           )}
         </AnimatePresence>
         {previewUrl && (
@@ -401,8 +434,8 @@ export function StudioUploadExperience() {
         >
           <HeadingLG>Build your look</HeadingLG>
           <p className="mt-2 text-sm text-muted-foreground">
-            Upload your portrait + wardrobe pieces — AI labels each garment automatically.
-            Upload your portrait + wardrobe pieces — each slot is applied in one FASHN step (~1 credit per piece).
+            Upload portrait + kurta/top (+ optional shalwar). Standing full-body AI try-on.
+            Footwear & accessories coming soon.
           </p>
           {user && (
             <p className="mt-1 text-xs text-muted-foreground/60">{user.email}</p>
@@ -454,7 +487,7 @@ export function StudioUploadExperience() {
             <Label className="mb-3 flex items-center gap-2 text-champagne-foreground">
               <ScanLine className="size-3.5" />
               Wardrobe Pieces
-              <span className="ml-auto text-xs text-muted-foreground">{garmentCount}/4 added</span>
+              <span className="ml-auto text-xs text-muted-foreground">{garmentCount}/2 active</span>
             </Label>
 
             {/* AI classify hint */}
@@ -466,7 +499,8 @@ export function StudioUploadExperience() {
               >
                 <Sparkles className="size-4 shrink-0 text-[var(--page-studio-accent)]" strokeWidth={1.5} />
                 <p className="text-xs text-muted-foreground">
-                  Drop into each slot — <strong className="text-foreground">kurta, shalwar, khussa, glasses</strong> — or use AI auto-detect
+                  Upload <strong className="text-foreground">kurta/top</strong> and optional{" "}
+                  <strong className="text-foreground">shalwar/bottom</strong> — standing full-body try-on
                 </p>
               </motion.div>
             )}
@@ -482,6 +516,7 @@ export function StudioUploadExperience() {
                 <GarmentCard
                   key={slot}
                   slot={slot}
+                  comingSoon={COMING_SOON_SLOTS.includes(slot)}
                   previewUrl={uploads[slot]}
                   label={uploadLabels[slot]}
                   isUploading={isUploading[slot]}
@@ -494,7 +529,7 @@ export function StudioUploadExperience() {
 
             {/* "All garments detected" banner */}
             <AnimatePresence>
-              {garmentCount === 4 && (
+              {garmentCount >= 1 && uploads.dress && (
                 <motion.div
                   initial={{ opacity: 0, y: 6, height: 0 }}
                   animate={{ opacity: 1, y: 0, height: "auto" }}
@@ -503,7 +538,7 @@ export function StudioUploadExperience() {
                 >
                   <div className="flex items-center gap-2 rounded-[var(--radius-lg)] bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                     <CheckCircle2 className="size-4" />
-                    Full wardrobe set — ready to generate!
+                    Ready for standing try-on — kurta/top{uploads.bottoms ? " + shalwar" : ""}!
                   </div>
                 </motion.div>
               )}
@@ -523,7 +558,7 @@ export function StudioUploadExperience() {
                 Your uploads · {(uploads.userPhoto ? 1 : 0) + garmentCount} piece{(uploads.userPhoto ? 1 : 0) + garmentCount !== 1 ? "s" : ""}
               </p>
               <div className="flex flex-wrap gap-3">
-                {(["userPhoto", ...GARMENT_SLOTS] as (StudioSlot | GarmentStudioSlot)[]).map((slot) => {
+                {(["userPhoto", ...ACTIVE_GARMENT_SLOTS] as (StudioSlot | GarmentStudioSlot)[]).map((slot) => {
                   const url = uploads[slot as keyof typeof uploads];
                   if (!url) return null;
                   const label = slot === "userPhoto" ? "Portrait" : (uploadLabels[slot as GarmentStudioSlot] ?? SLOT_META[slot as GarmentStudioSlot]?.label ?? slot);
@@ -580,11 +615,11 @@ export function StudioUploadExperience() {
             >
               {!uploads.userPhoto
                 ? "← Start by uploading your portrait"
-                : garmentCount === 0
-                  ? "Now add at least one wardrobe piece →"
+                : !uploads.dress
+                  ? "Add your kurta / top (required) →"
                   : isAnyLoading
                     ? "Processing your images…"
-                    : `${garmentCount} garment${garmentCount !== 1 ? "s" : ""} ready · tap Generate when done`}
+                    : `Standing try-on ready${uploads.bottoms ? " · top + bottom" : " · top only"}`}
             </motion.p>
           </AnimatePresence>
         </motion.div>

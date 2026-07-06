@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Preview3DPage } from "@/features/preview-3d/components/preview-3d-page";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <Preview3DPage />;
+  return (
+    <Suspense>
+      <Preview3DPage />
+    </Suspense>
+  );
 }

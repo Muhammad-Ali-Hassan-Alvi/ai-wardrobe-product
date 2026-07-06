@@ -29,6 +29,7 @@ export type VirtualTryOnResult = {
 };
 
 import Fashn from "fashn";
+import { prepareTryOnResultBuffer } from "@/server/images/try-on-image-postprocess";
 
 const FASHN_TRYON_MODEL = "tryon-v1.6";
 const FASHN_TRYON_MAX = "tryon-max";
@@ -44,6 +45,131 @@ function fashnCategory(slot: UploadSlot): "tops" | "bottoms" | "one-pieces" | "a
   if (slot === "DRESS") return "tops";
   if (slot === "BOTTOMS") return "bottoms";
   return "auto";
+}
+
+type FashnTryOnMode = "performance" | "balanced" | "quality";
+type FashnGenerationMode = "fast" | "balanced" | "quality";
+type FashnResolution = "1k" | "2k" | "4k";
+
+function getTryOnMode(): FashnTryOnMode {
+  return env.FASHN_TRYON_MODE;
+}
+
+function getGenerationMode(): FashnGenerationMode {
+  return env.FASHN_GENERATION_MODE;
+}
+
+function getResolution(): FashnResolution {
+  return env.FASHN_RESOLUTION;
+}
+
+function getPredictionTimeout(): number {
+  if (getResolution() === "4k" && getGenerationMode() === "quality") {
+    return 600_000;
+  }
+  if (getResolution() === "2k" || getGenerationMode() === "quality") {
+    return 420_000;
+  }
+  return 240_000;
+}
+
+function buildTryOnV16Inputs(modelImage: string, garment: TryOnGarmentInput) {
+  return {
+    model_image: modelImage,
+    garment_image: garment.imageUrl,
+    category: fashnCategory(garment.slot),
+    garment_photo_type: "auto" as const,
+    mode: getTryOnMode(),
+    output_format: "jpeg" as const,
+    moderation_level: "permissive" as const,
+    segmentation_free: true,
+  };
+}
+
+function buildTryOnMaxInputs(modelImage: string, garment: TryOnGarmentInput) {
+  const piece =
+    garment.slot === "DRESS"
+      ? "top garment"
+      : garment.slot === "BOTTOMS"
+        ? "bottom garment"
+        : "garment";
+
+  return {
+    model_image: modelImage,
+    product_image: garment.imageUrl,
+    prompt: [
+      "Photorealistic editorial fashion photo",
+      `Apply the exact ${piece}: ${garment.label}`,
+      "preserve accurate fabric texture, weave, color, and stitching from the product photo",
+      "natural body fit and realistic draping",
+      "neutral cream studio background",
+      "soft natural lighting",
+    ].join(". "),
+    generation_mode: getGenerationMode(),
+    resolution: getResolution(),
+    aspect_ratio: "3:4",
+    output_format: "png",
+  };
+}
+
+async function applyTryOnGarment(
+  modelImage: string,
+  garment: TryOnGarmentInput,
+  logLabel: string,
+): Promise<string> {
+  return callFashnPrediction(
+    FASHN_TRYON_MODEL,
+    buildTryOnV16Inputs(modelImage, garment),
+    logLabel,
+  );
+}
+
+/**
+ * One bundled call: portrait face + standing pose + kurta/top product image.
+ * FASHN has no multi-garment tryon-v1.6 — bottoms are a separate v1.6 pass if uploaded.
+ */
+async function buildStandingOutfitBase(
+  input: VirtualTryOnInput,
+  dress: TryOnGarmentInput,
+  bottoms?: TryOnGarmentInput,
+): Promise<string> {
+  const poseRef =
+    env.FASHN_STANDING_POSE_URL ?? fashnConfig.standingPoseImageUrl;
+
+  const outfitHints = [
+    "Full body standing fashion photo",
+    "wide framing from head to shoes",
+    "complete outfit visible including trousers and full legs",
+    "neutral cream studio background",
+    "soft natural lighting",
+    "photorealistic",
+    bottoms ? `wearing ${bottoms.label} on the lower body` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return callFashnPrediction(
+    "product-to-model",
+    {
+      product_image: dress.imageUrl,
+      face_reference: input.userPhotoUrl,
+      face_reference_mode: "match_base",
+      image_prompt: poseRef,
+      prompt: outfitHints,
+      aspect_ratio: "3:4",
+      generation_mode: getGenerationMode(),
+      resolution: getResolution(),
+    },
+    "FASHN standing outfit base",
+  );
+}
+
+async function finalizeTryOnImage(imageUrl: string): Promise<{
+  buffer: Buffer;
+  mimeType: string;
+}> {
+  const { buffer, mimeType } = await fetchImageBuffer(imageUrl);
+  return prepareTryOnResultBuffer(buffer, mimeType);
 }
 
 function buildStylingPrompt(garments: TryOnGarmentInput[]): string {
@@ -73,7 +199,7 @@ async function callFashnPrediction(
   const result = await fashn.predictions.subscribe({
     model_name: modelName,
     inputs: inputs as never,
-    timeout: 180_000,
+    timeout: getPredictionTimeout(),
     onQueueUpdate: (status) => {
       console.log(`[try-on] ${logLabel} status:`, status.status);
     },
@@ -119,6 +245,52 @@ function detectImageMime(buffer: Buffer, headerMime?: string | null): string {
   return "image/png";
 }
 
+/** Slots included in FASHN try-on (footwear & accessories = coming soon in UI). */
+const TRY_ON_SLOTS: UploadSlot[] = ["DRESS", "BOTTOMS"];
+
+function activeTryOnGarments(garments: TryOnGarmentInput[]) {
+  return sortGarments(garments).filter((g) => TRY_ON_SLOTS.includes(g.slot));
+}
+
+const COMING_SOON_NOTE =
+  "Footwear and accessories — coming soon. Standing try-on applies kurta/top and shalwar/bottom.";
+
+/** Standing: 1 bundled product-to-model + optional tryon-v1.6 for bottoms. */
+async function runFashnStandingTryOn(input: VirtualTryOnInput): Promise<VirtualTryOnResult> {
+  const active = activeTryOnGarments(input.garments);
+  const dress = active.find((g) => g.slot === "DRESS");
+  if (!dress) {
+    throw new Error("Upload a kurta or top (dress slot) for virtual try-on");
+  }
+
+  const bottoms = active.find((g) => g.slot === "BOTTOMS");
+  const steps = bottoms ? 2 : 1;
+
+  console.log(
+    `[try-on] FASHN pipeline: standing — ${steps} step(s) — product-to-model (${getGenerationMode()}/${getResolution()}) + tryon-v1.6 ${getTryOnMode()}${bottoms ? " (bottoms)" : ""}`,
+  );
+
+  let personImage = await buildStandingOutfitBase(input, dress, bottoms);
+
+  if (bottoms) {
+    personImage = await applyTryOnGarment(
+      personImage,
+      bottoms,
+      "FASHN standing (BOTTOMS)",
+    );
+  }
+
+  const { buffer, mimeType } = await finalizeTryOnImage(personImage);
+
+  return {
+    resultBuffer: buffer,
+    resultMimeType: mimeType,
+    provider: "fashn-standing-v16",
+    isRealTryOn: true,
+    previewNote: COMING_SOON_NOTE,
+  };
+}
+
 /** ~3–4 credits: tryon-v1.6 per body piece + tryon-max fast for accessories. */
 async function runFashnCompleteTryOn(input: VirtualTryOnInput): Promise<VirtualTryOnResult> {
   const sorted = sortGarments(input.garments);
@@ -140,16 +312,9 @@ async function runFashnCompleteTryOn(input: VirtualTryOnInput): Promise<VirtualT
 
   for (const garment of bodyChain) {
     console.log("[try-on] Applying:", garment.slot, garment.label);
-    personImage = await callFashnPrediction(
-      FASHN_TRYON_MODEL,
-      {
-        model_image: personImage,
-        garment_image: garment.imageUrl,
-        category: fashnCategory(garment.slot),
-        garment_photo_type: "flat-lay",
-        mode: "performance",
-        moderation_level: "permissive",
-      },
+    personImage = await applyTryOnGarment(
+      personImage,
+      garment,
       `FASHN complete (${garment.slot})`,
     );
   }
@@ -162,15 +327,16 @@ async function runFashnCompleteTryOn(input: VirtualTryOnInput): Promise<VirtualT
         model_image: personImage,
         product_image: garment.imageUrl,
         prompt: `Wear ${garment.label} naturally on the model`,
-        generation_mode: "fast",
-        resolution: "1k",
+        generation_mode: getGenerationMode(),
+        resolution: getResolution(),
         aspect_ratio: "3:4",
+        output_format: "png",
       },
       `FASHN complete (${garment.slot})`,
     );
   }
 
-  const { buffer, mimeType } = await fetchImageBuffer(personImage);
+  const { buffer, mimeType } = await finalizeTryOnImage(personImage);
 
   return {
     resultBuffer: buffer,
@@ -210,7 +376,7 @@ async function runFashnBudgetTryOn(input: VirtualTryOnInput): Promise<VirtualTry
     "FASHN budget try-on",
   );
 
-  const { buffer, mimeType } = await fetchImageBuffer(resultUrl);
+  const { buffer, mimeType } = await finalizeTryOnImage(resultUrl);
 
   return {
     resultBuffer: buffer,
@@ -242,21 +408,14 @@ async function runFashnQualityTryOn(input: VirtualTryOnInput): Promise<VirtualTr
   let personImage = preparePortraitForTryOn(input.userPhotoPublicId);
 
   for (const garment of chain.slice(0, 2)) {
-    personImage = await callFashnPrediction(
-      FASHN_TRYON_MODEL,
-      {
-        model_image: personImage,
-        garment_image: garment.imageUrl,
-        category: fashnCategory(garment.slot),
-        garment_photo_type: "flat-lay",
-        mode: "performance",
-        moderation_level: "permissive",
-      },
+    personImage = await applyTryOnGarment(
+      personImage,
+      garment,
       `FASHN quality (${garment.slot})`,
     );
   }
 
-  const { buffer, mimeType } = await fetchImageBuffer(personImage);
+  const { buffer, mimeType } = await finalizeTryOnImage(personImage);
   const skipped = sorted.filter((g) => !chain.slice(0, 2).includes(g));
 
   return {
@@ -274,36 +433,18 @@ async function runFashnQualityTryOn(input: VirtualTryOnInput): Promise<VirtualTr
 /** Premium multi-step (standing re-pose) — only when explicitly enabled. ~5–9 credits. */
 async function runFashnPremiumTryOn(input: VirtualTryOnInput): Promise<VirtualTryOnResult> {
   const sorted = sortGarments(input.garments);
-  const bodyGarments = sorted.filter(
-    (g) => g.slot === "DRESS" || g.slot === "BOTTOMS" || g.slot === "SHOES",
-  );
-  const primary = bodyGarments.find((g) => g.slot === "DRESS") ?? bodyGarments[0];
-  if (!primary) {
+  if (!sorted.some((g) => g.slot === "DRESS")) {
     throw new Error("Upload a kurta or top (dress slot) for virtual try-on");
   }
 
-  const poseRef =
-    env.FASHN_STANDING_POSE_URL ?? fashnConfig.standingPoseImageUrl;
-  const outfitPrompt = buildStylingPrompt(sorted);
+  const dress = sorted.find((g) => g.slot === "DRESS")!;
+  const bottoms = sorted.find((g) => g.slot === "BOTTOMS");
 
   console.log("[try-on] FASHN pipeline: premium (5–9 credits) — standing re-pose");
 
-  let personImage = await callFashnPrediction(
-    "product-to-model",
-    {
-      product_image: primary.imageUrl,
-      face_reference: input.userPhotoUrl,
-      face_reference_mode: "match_base",
-      image_prompt: poseRef,
-      prompt: outfitPrompt,
-      aspect_ratio: "3:4",
-      generation_mode: "fast",
-      resolution: "1k",
-    },
-    "FASHN standing base",
-  );
+  let personImage = await buildStandingOutfitBase(input, dress, bottoms);
 
-  for (const garment of sorted.filter((g) => g !== primary)) {
+  for (const garment of sorted.filter((g) => g.slot !== "DRESS")) {
     const model =
       garment.slot === "ACCESSORIES" ? FASHN_TRYON_MAX : FASHN_TRYON_MODEL;
     const inputs =
@@ -312,18 +453,12 @@ async function runFashnPremiumTryOn(input: VirtualTryOnInput): Promise<VirtualTr
             model_image: personImage,
             product_image: garment.imageUrl,
             prompt: `Wear ${garment.label} naturally`,
-            generation_mode: "fast",
-            resolution: "1k",
+            generation_mode: getGenerationMode(),
+            resolution: getResolution(),
             aspect_ratio: "3:4",
+            output_format: "png",
           }
-        : {
-            model_image: personImage,
-            garment_image: garment.imageUrl,
-            category: fashnCategory(garment.slot),
-            garment_photo_type: "flat-lay",
-            mode: "performance",
-            moderation_level: "permissive",
-          };
+        : buildTryOnV16Inputs(personImage, garment);
 
     personImage = await callFashnPrediction(
       model,
@@ -332,7 +467,7 @@ async function runFashnPremiumTryOn(input: VirtualTryOnInput): Promise<VirtualTr
     );
   }
 
-  const { buffer, mimeType } = await fetchImageBuffer(personImage);
+  const { buffer, mimeType } = await finalizeTryOnImage(personImage);
   return {
     resultBuffer: buffer,
     resultMimeType: mimeType,
@@ -342,16 +477,16 @@ async function runFashnPremiumTryOn(input: VirtualTryOnInput): Promise<VirtualTr
 }
 
 async function runFashnTryOn(input: VirtualTryOnInput): Promise<VirtualTryOnResult> {
-  if (env.FASHN_REPOSE_STANDING === "true") {
-    return runFashnPremiumTryOn(input);
-  }
   if (env.FASHN_PIPELINE === "budget") {
     return runFashnBudgetTryOn(input);
   }
   if (env.FASHN_PIPELINE === "quality") {
     return runFashnQualityTryOn(input);
   }
-  return runFashnCompleteTryOn(input);
+  if (env.FASHN_PIPELINE === "complete") {
+    return runFashnCompleteTryOn(input);
+  }
+  return runFashnStandingTryOn(input);
 }
 
 async function runGeminiTryOn(input: VirtualTryOnInput): Promise<VirtualTryOnResult> {
@@ -433,7 +568,10 @@ export async function runVirtualTryOn(
   console.log("[try-on] Provider chain:", chain.join(" → "));
   console.log("[try-on] TRYON_PROVIDER env:", env.TRYON_PROVIDER);
   console.log("[try-on] FASHN_PIPELINE env:", env.FASHN_PIPELINE);
-  console.log("[try-on] FASHN_REPOSE_STANDING:", env.FASHN_REPOSE_STANDING);
+  console.log("[try-on] FASHN_TRYON_ENGINE:", env.FASHN_TRYON_ENGINE);
+  console.log("[try-on] FASHN_TRYON_MODE:", env.FASHN_TRYON_MODE);
+  console.log("[try-on] FASHN_GENERATION_MODE:", env.FASHN_GENERATION_MODE);
+  console.log("[try-on] FASHN_RESOLUTION:", env.FASHN_RESOLUTION);
   console.log("[try-on] FASHN_API_KEY set:", Boolean(env.FASHN_API_KEY));
   console.log("[try-on] Garment slots:", input.garments.map((g) => g.slot).join(", "));
 

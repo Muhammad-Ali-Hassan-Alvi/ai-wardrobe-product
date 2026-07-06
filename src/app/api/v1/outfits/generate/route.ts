@@ -3,6 +3,9 @@ import { getSessionUserId } from "@/lib/session/get-session-user";
 import { normalizeAiError } from "@/server/ai/normalize-ai-error";
 import { StudioService } from "@/server/services/studio.service";
 
+/** Standing + tryon-max quality/4k can take several minutes. */
+export const maxDuration = 300;
+
 export async function POST() {
   try {
     const userId = await getSessionUserId();

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FashionButton } from "@/design-system";
 import { DEMO_ROUTES } from "@/features/demo/constants/demo.constants";
 import { PageHeader } from "@/features/app/components/page-header";
@@ -13,9 +14,12 @@ interface OutfitDto {
 }
 
 export function Preview3DPage() {
+  const searchParams = useSearchParams();
+  const queryImage = searchParams.get("image");
   const [outfit, setOutfit] = useState<OutfitDto | null>(null);
 
   useEffect(() => {
+    if (queryImage) return;
     fetch("/api/v1/outfits", { credentials: "include" })
       .then((r) => r.json())
       .then((json) => {
@@ -24,16 +28,18 @@ export function Preview3DPage() {
         }
       })
       .catch(() => undefined);
-  }, []);
+  }, [queryImage]);
+
+  const imageSrc = queryImage ?? outfit?.resultImageUrl ?? undefined;
 
   return (
     <div>
       <PageHeader
         label="3D Preview"
-        title="See every angle"
-        description="Rotate and adjust lighting on your composed look — check dupatta drape and colour under evening light."
+        title="Front view preview"
+        description="Inspect fit and colour from the front. Multi-angle side & back views are coming in a future update."
         action={
-          !outfit?.resultImageUrl ? (
+          !imageSrc ? (
             <FashionButton variant="outline" size="pill" asChild>
               <Link href={DEMO_ROUTES.studio}>Generate a look first</Link>
             </FashionButton>
@@ -41,12 +47,12 @@ export function Preview3DPage() {
         }
       />
 
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto w-full max-w-sm sm:max-w-md">
         <Preview3DViewer
-          imageSrc={outfit?.resultImageUrl ?? undefined}
+          imageSrc={imageSrc}
           imageAlt={outfit?.title ?? "Outfit preview"}
         />
-        {outfit?.resultImageUrl && (
+        {imageSrc && (
           <p className="mt-4 text-center text-body-sm text-muted-foreground">
             Showing your latest generated outfit —{" "}
             <Link href={DEMO_ROUTES.result} className="text-foreground underline-offset-4 hover:underline">

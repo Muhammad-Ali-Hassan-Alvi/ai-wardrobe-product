@@ -1,5 +1,12 @@
-/** Extract a human-readable message from unknown thrown values (Cloudinary, Zod, etc.). */
+/** Extract a human-readable message from unknown thrown values (Cloudinary, Zod, Prisma, etc.). */
 export function getErrorMessage(error: unknown, fallback = "Something went wrong"): string {
+  if (error && typeof error === "object" && "code" in error) {
+    const code = String((error as { code: unknown }).code);
+    if (code === "P1001") {
+      return "Database is unreachable. Check your internet, VPN, or open Supabase dashboard to wake the project, then refresh.";
+    }
+  }
+
   if (error instanceof Error) {
     return error.message || fallback;
   }

@@ -59,11 +59,26 @@ export const tryOnEnvSchema = {
   /** Optional pose reference image URL for standing re-pose. */
   FASHN_STANDING_POSE_URL: z.string().url().optional(),
   /**
-   * complete = each wardrobe slot applied (~1 credit/slot, 3–4 total). Default.
-   * budget = 1 tryon-max call (~1 credit), prompt-only for extra pieces.
-   * quality = top + bottom only (~2 credits).
+   * standing = full-body standing re-pose + top (+ optional bottom). ~3–4 credits.
+   * complete | budget | quality = legacy modes.
    */
-  FASHN_PIPELINE: z.enum(["complete", "budget", "quality"]).default("complete"),
+  FASHN_PIPELINE: z
+    .enum(["standing", "complete", "budget", "quality"])
+    .default("standing"),
+  /** tryon-v1.6 mode when FASHN_TRYON_ENGINE=v16. */
+  FASHN_TRYON_MODE: z
+    .enum(["performance", "balanced", "quality"])
+    .default("quality"),
+  /** v16 = faithful flat-lay mapping (864×1296). max = higher-res try-on (legacy). */
+  FASHN_TRYON_ENGINE: z.enum(["v16", "max"]).default("v16"),
+  /** product-to-model generation tier — keep 1k/balanced to avoid huge files. */
+  FASHN_GENERATION_MODE: z
+    .enum(["fast", "balanced", "quality"])
+    .default("balanced"),
+  /** Output resolution for product-to-model — 1k fits Cloudinary 10MB after compression. */
+  FASHN_RESOLUTION: z.enum(["1k", "2k", "4k"]).default("1k"),
+  /** Optional neutral flat-lay for standing pose scaffold (not shown in final outfit). */
+  FASHN_NEUTRAL_GARMENT_URL: z.string().url().optional(),
   TRYON_WEBHOOK_SECRET: z.string().optional(),
 } as const;
 
