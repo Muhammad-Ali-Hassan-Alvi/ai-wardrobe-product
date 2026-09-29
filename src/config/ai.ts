@@ -12,6 +12,8 @@ export const aiConfig = {
     openai: {
       model: "gpt-4o",
       embeddingModel: "text-embedding-3-small",
+      maxTokens: 4096,
+      temperature: 0.7,
     },
     anthropic: {
       model: "claude-sonnet-4-20250514",

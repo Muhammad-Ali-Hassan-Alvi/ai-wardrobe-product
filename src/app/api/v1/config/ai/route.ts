@@ -13,6 +13,7 @@ import { apiSuccess } from "@/lib/api/response";
 export async function GET() {
   return apiSuccess({
     aiProvider: env.AI_PROVIDER,
+    openaiConfigured: Boolean(env.OPENAI_API_KEY),
     geminiTextModel: getResolvedGeminiTextModel(env.GEMINI_MODEL),
     tryOnProvider: env.TRYON_PROVIDER,
     geminiTryOnModel: getResolvedGeminiTryOnModel(env.GEMINI_TRYON_MODEL),
@@ -22,12 +23,14 @@ export async function GET() {
     falTryOnModel: env.FAL_TRYON_MODEL ?? "fal-ai/fashn/tryon/v1.6",
     defaults: {
       textModel: aiConfig.providers.gemini.model,
+      openaiModel: aiConfig.providers.openai.model,
       tryOnModel: aiConfig.tryOn.model,
     },
     options: {
       textModels: GEMINI_TEXT_MODELS,
       imageModels: GEMINI_IMAGE_MODELS,
       tryOnProviders: TRYON_PROVIDERS,
+      analysisProviders: ["gemini", "openai"] as const,
     },
     envKeys: {
       textModel: "GEMINI_MODEL",
@@ -37,6 +40,7 @@ export async function GET() {
       falApiKey: "FAL_API_KEY",
       fashnApiKey: "FASHN_API_KEY",
       apiKey: "GOOGLE_GENERATIVE_AI_API_KEY",
+      openaiApiKey: "OPENAI_API_KEY",
     },
   });
 }

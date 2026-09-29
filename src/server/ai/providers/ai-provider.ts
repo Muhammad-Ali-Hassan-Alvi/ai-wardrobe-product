@@ -13,8 +13,9 @@ export interface AiCompletionOptions {
   maxTokens?: number;
 }
 
-export interface AiStructuredOptions<TSchema extends z.ZodType>
-  extends AiCompletionOptions {
+export interface AiStructuredOptions<
+  TSchema extends z.ZodType,
+> extends AiCompletionOptions {
   schema: TSchema;
 }
 
@@ -43,6 +44,9 @@ export interface AiProvider {
 
   /** Optional embeddings — implemented when provider supports it */
   embed?(text: string): Promise<number[]>;
+
+  /** Optional vision — outfit analysis / garment classify */
+  analyzeImages?(imageUrls: string[], prompt: string): Promise<string>;
 }
 
 export class AiProviderNotImplementedError extends Error {

@@ -2,7 +2,10 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { DemoGarmentSlot, DemoOutfitResult } from "../constants/demo.constants";
+import type {
+  DemoGarmentSlot,
+  DemoOutfitResult,
+} from "../constants/demo.constants";
 import { MOCK_OUTFIT_RESULT } from "../constants/mock-data";
 import {
   deleteUpload,
@@ -32,6 +35,7 @@ interface DemoStore {
   uploadLabels: LabelMap;
   result: DemoOutfitResult;
   outfitId: string | null;
+  analysisProvider: "gemini" | "openai";
   isUploading: Record<StudioSlot, boolean>;
   isClassifyingGarment: boolean;
   isGenerating: boolean;
@@ -40,6 +44,7 @@ interface DemoStore {
   initSession: () => Promise<void>;
   uploadFile: (slot: StudioSlot | "auto", file: File) => Promise<void>;
   removeUpload: (slot: StudioSlot) => Promise<void>;
+  setAnalysisProvider: (provider: "gemini" | "openai") => void;
   generate: () => Promise<DemoOutfitResult>;
   clearError: () => void;
   resetDemo: () => Promise<void>;
@@ -82,6 +87,7 @@ export const useDemoStore = create<DemoStore>()(
       uploadLabels: emptyLabels(),
       result: MOCK_OUTFIT_RESULT,
       outfitId: null,
+      analysisProvider: "gemini",
       isClassifyingGarment: false,
       isUploading: {
         userPhoto: false,
@@ -163,13 +169,15 @@ export const useDemoStore = create<DemoStore>()(
         }
       },
 
+      setAnalysisProvider: (provider) => set({ analysisProvider: provider }),
+
       generate: async () => {
         if (get().isGenerating) {
           throw new Error("Generation already in progress");
         }
         set({ isGenerating: true, error: null });
         try {
-          const { outfit } = await generateOutfit();
+          const { outfit } = await generateOutfit(get().analysisProvider);
           const result = mapOutfitToResult(outfit);
           set({
             result,

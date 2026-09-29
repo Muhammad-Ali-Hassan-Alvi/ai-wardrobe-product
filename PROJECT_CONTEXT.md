@@ -2,9 +2,9 @@
 
 > **Living document.** Update this file after every completed task.
 
-**Last updated:** 2025-06-28  
-**Phase:** Studio backend live — real uploads, Gemini analysis, Supabase persistence  
-**Repository state:** Design system + experiential homepage + functional studio API
+**Last updated:** 2026-09-29  
+**Phase:** Studio backend live — uploads, Gemini/OpenAI analysis, FASHN try-on, Supabase persistence  
+**Repository state:** Design system + experiential homepage + functional studio API + dual analysis providers
 
 ---
 
@@ -14,9 +14,10 @@
 - **Composition root:** `src/server/container.ts`
 - **Design system:** `src/design-system/` — import via `@/design-system`
 - **Database:** Supabase PostgreSQL — Prisma models (`User`, `Upload`, `Outfit`) synced
-- **Auth:** Anonymous session cookies (`aw_session_id`); Supabase Auth configured, no login UI
+- **Auth:** Anonymous session cookies (`aw_session_id`); Supabase Auth UI present (login/register); not required for studio
 - **Storage:** Cloudinary — studio uploads to user/wardrobe folders
-- **AI:** Gemini provider — real outfit analysis on generate
+- **AI analysis:** Gemini default; OpenAI optional per-request (`gpt-4o` vision)
+- **Try-on:** FASHN orchestrator (`TRYON_PROVIDER=auto`) with Gemini/composite fallbacks
 
 See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md).
 
@@ -64,7 +65,7 @@ Run: `npm run dev` → `http://localhost:3000`
 
 ## Stakeholder Demo Flow (Studio)
 
-**Real backend** — Cloudinary uploads, Supabase persistence, Gemini outfit analysis.
+**Real backend** — Cloudinary uploads, Supabase persistence, Gemini/OpenAI outfit analysis, FASHN try-on.
 
 ```
 / → /studio → /studio/generating → /studio/result
@@ -73,10 +74,19 @@ Run: `npm run dev` → `http://localhost:3000`
 | Route | Screen |
 |-------|--------|
 | `/` | Experiential landing (8 sections) |
-| `/studio` | Upload 4 images → Cloudinary + DB |
-| `/studio/generating` | Calls `POST /api/v1/outfits/generate` (Gemini) |
-| `/studio/result` | AI score, title, explanation, color palette |
-| `/dashboard` | App shell placeholder |
+| `/studio` | Upload portrait + garments → Cloudinary + DB |
+| `/studio/generating` | Calls `POST /api/v1/outfits/generate` |
+| `/studio/result` | AI score, title, explanation, color palette, try-on image |
+| `/dashboard` | App shell (uploads/outfits KPIs) |
+
+### Studio generate CTAs
+
+| Button | Analysis provider |
+|--------|-------------------|
+| **Generate Outfit** (primary) | Gemini (default) |
+| **Generate with OpenAI** (outline) | OpenAI `gpt-4o` vision |
+
+Body: `{ "aiProvider": "gemini" | "openai" }` — try-on path unchanged (FASHN).
 
 ### API (`/api/v1`)
 
@@ -84,11 +94,22 @@ Run: `npm run dev` → `http://localhost:3000`
 |----------|---------|
 | `GET /session` | Create/load anonymous user |
 | `GET\|POST\|DELETE /uploads` | List, upload, remove slot images |
-| `POST /outfits/generate` | Gemini analysis → Outfit record |
+| `POST /outfits/generate` | Analysis + try-on → Outfit record |
 | `GET /outfits/[id]` | Fetch outfit result |
+| `GET /outfits` | List outfits |
+| `POST /stylist/chat` | AI stylist reply |
 | `POST /session/reset` | Clear uploads for session |
+| `GET /config/ai` | Public AI config (no secrets) |
 
 Run: `npm run dev` → `http://localhost:3000`
+
+---
+
+## Local env (2026-09-29)
+
+- Linked Vercel project `ai-wardrobe-product` (Ali)
+- `.env.local` pulled from production + `FASHN_API_KEY` + `OPENAI_API_KEY`
+- `AI_PROVIDER=gemini` (default)
 
 ---
 
@@ -112,14 +133,15 @@ Run: `npm run verify:infra`
 | Layer | Choice | Status |
 |-------|--------|--------|
 | Framework | Next.js 16 (App Router) | ✅ |
-| Design system | `Fashion*` components + CSS tokens | ✅ New |
+| Design system | `Fashion*` components + CSS tokens | ✅ |
 | UI (legacy) | shadcn/ui in `@/components/ui` | ✅ App shell |
 | Motion | Framer Motion presets in design system | ✅ |
 | State (demo) | Zustand | ✅ |
 | Database | Supabase + Prisma 7 | ✅ Connected |
-| Auth | Supabase Auth | ✅ Configured |
+| Auth | Supabase Auth | ✅ UI + session refresh |
 | Storage | Cloudinary | ✅ Verified |
-| AI | Gemini (outfit analysis) | ✅ Wired |
+| AI analysis | Gemini (default) + OpenAI (optional) | ✅ |
+| Try-on | FASHN (+ fallbacks) | ✅ |
 
 ---
 
@@ -131,8 +153,10 @@ Run: `npm run verify:infra`
 | Architecture refinement | ✅ |
 | Supabase + infra verification | ✅ |
 | Stakeholder demo vertical slice | ✅ |
-| **Premium design system** | ✅ |
-| **Studio backend (uploads + Gemini + DB)** | ✅ |
+| Premium design system | ✅ |
+| Studio backend (uploads + analysis + DB) | ✅ |
+| FASHN virtual try-on orchestrator | ✅ |
+| OpenAI analysis provider + studio CTA | ✅ |
 
 ---
 
@@ -140,10 +164,10 @@ Run: `npm run verify:infra`
 
 | Feature | Priority |
 |---------|----------|
-| Try-on composite image (not portrait placeholder) | P0 |
-| Migrate demo pages → design system components | P1 |
-| Supabase Auth UI + cross-device history | P1 |
-| Wardrobe CRUD | P2 |
+| Link Supabase Auth ↔ studio `User` for cross-device history | P1 |
+| Migrate remaining shell pages → design system | P1 |
+| Wardrobe CRUD (first-class items beyond studio slots) | P2 |
+| Recommendations AI | P2 |
 
 ---
 
@@ -156,6 +180,8 @@ Run: `npm run verify:infra`
 | 2025-06-28 | Stakeholder demo vertical slice |
 | 2025-06-28 | Experiential homepage — 8 editorial sections |
 | 2025-06-28 | Studio backend — Prisma models, Cloudinary uploads, Gemini analysis, API routes |
+| 2026-09-29 | Local env from Vercel (Ali) + FASHN key |
+| 2026-09-29 | OpenAI provider + “Generate with OpenAI” studio button (Gemini remains default) |
 
 ---
 

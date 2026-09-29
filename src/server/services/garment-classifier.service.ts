@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { UploadSlot } from "@/generated/prisma/client";
 import { getAiProvider } from "../ai";
-import { GeminiAiProvider } from "../ai/providers/gemini.provider";
 
 const garmentClassificationSchema = z.object({
   slot: z.enum(["DRESS", "BOTTOMS", "SHOES", "ACCESSORIES"]),
@@ -33,7 +32,7 @@ export async function classifyGarmentImage(
 ): Promise<GarmentClassification> {
   const ai = getAiProvider();
 
-  if (ai instanceof GeminiAiProvider) {
+  if (ai.analyzeImages) {
     const raw = await ai.analyzeImages([imageUrl], CLASSIFY_PROMPT);
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     return garmentClassificationSchema.parse(JSON.parse(jsonMatch?.[0] ?? raw));
