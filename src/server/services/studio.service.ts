@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { cloudinaryConfig } from "@/config/cloudinary";
+import { env } from "@/config/env";
 import { getAiProvider, type AnalysisAiProviderName } from "../ai";
 import { createRepositories } from "../db/repositories";
 import type { UploadRecord } from "../db/repositories";
@@ -174,6 +175,62 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     );
   }
 
+  /**
+   * Feedback only (Gemini default / OpenAI optional).
+   * Try-on image is handled separately by FASHN — analysis must not block it.
+   */
+  private async analyzeOutfitWithFallback(
+    imageUrls: string[],
+    garmentDescriptions: string,
+    preferred?: AnalysisAiProviderName,
+  ): Promise<{ analysis: OutfitAnalysis; provider: string }> {
+    const order: AnalysisAiProviderName[] =
+      preferred === "openai" ? ["openai", "gemini"] : ["gemini", "openai"];
+
+    const errors: string[] = [];
+
+    for (const name of order) {
+      if (name === "gemini" && !env.GOOGLE_GENERATIVE_AI_API_KEY) continue;
+      if (name === "openai" && !env.OPENAI_API_KEY) continue;
+
+      try {
+        const analysis = await this.analyzeOutfit(
+          imageUrls,
+          garmentDescriptions,
+          name,
+        );
+        return { analysis, provider: name };
+      } catch (error) {
+        const message = getErrorMessage(error, `${name} analysis failed`);
+        errors.push(`${name}: ${message}`);
+        console.warn(`[studio] analysis via ${name} failed:`, message);
+      }
+    }
+
+    console.warn(
+      "[studio] All analysis providers failed — using local fallback feedback:",
+      errors.join(" · "),
+    );
+
+    return {
+      provider: "fallback",
+      analysis: {
+        score: 78,
+        title: "Styled Look",
+        explanation:
+          "Your uploaded pieces were composed into a virtual try-on. Detailed AI feedback was unavailable, so this is a general styling summary.",
+        highlights: [
+          "Portrait and garments captured",
+          "Virtual try-on generated with FASHN",
+          errors[0]
+            ? "Feedback provider issue — check Gemini/OpenAI API keys"
+            : "Ready to refine with another generate",
+        ].slice(0, 3),
+        colorPalette: ["#1c1917", "#a8a29e", "#d6d3d1", "#fafaf9", "#78716c"],
+      },
+    };
+  }
+
   private async resolveTryOnImage(
     userId: string,
     outfitId: string,
@@ -318,19 +375,20 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         .map((g) => labelForUpload(g))
         .join(", ");
 
-      const analysisAi = getAiProvider(options?.aiProvider);
-      const analysis = await this.analyzeOutfit(
-        imageUrls,
-        garmentDescriptions,
-        options?.aiProvider,
-      );
-
+      // FASHN owns the try-on image. Gemini/OpenAI own feedback only.
       const tryOnImage = await this.resolveTryOnImage(
         userId,
         outfit.id,
         portrait,
         activeGarments,
       );
+
+      const { analysis, provider: analysisProvider } =
+        await this.analyzeOutfitWithFallback(
+          imageUrls,
+          garmentDescriptions,
+          options?.aiProvider,
+        );
 
       const highlights = tryOnImage.previewNote
         ? [...analysis.highlights, tryOnImage.previewNote].slice(0, 5)
@@ -347,7 +405,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         colorPalette: analysis.colorPalette,
         resultImageUrl: tryOnImage.resultImageUrl,
         resultPublicId: tryOnImage.resultPublicId,
-        aiProvider: `${analysisAi.name}+${tryOnImage.provider}`,
+        aiProvider: `${analysisProvider}+${tryOnImage.provider}`,
         processingMs,
       });
     } catch (error) {

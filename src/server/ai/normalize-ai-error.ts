@@ -59,12 +59,15 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   if (raw.includes("API key") || raw.includes("API_KEY")) {
     return {
       message:
-        "Gemini API key is missing or invalid. Add GOOGLE_GENERATIVE_AI_API_KEY to .env.local.",
+        "The Gemini API key is invalid or unauthorized (401). Create a key at https://aistudio.google.com/apikey (usually starts with AIza), set GOOGLE_GENERATIVE_AI_API_KEY, and restart. Or use Generate with OpenAI for feedback.",
       status: 503,
     };
   }
 
-  if (raw.toLowerCase().includes("file size too large") || raw.includes("Max file size")) {
+  if (
+    raw.toLowerCase().includes("file size too large") ||
+    raw.includes("Max file size")
+  ) {
     return {
       message:
         "Try-on image is too large to save. Reduce FASHN resolution or increase Cloudinary upload limits.",
@@ -75,7 +78,9 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   const trimmed = raw.replace(/\s+/g, " ").trim();
   return {
     message:
-      trimmed.length > 240 ? `${trimmed.slice(0, 237)}…` : trimmed || "Generation failed",
+      trimmed.length > 240
+        ? `${trimmed.slice(0, 237)}…`
+        : trimmed || "Generation failed",
     status: 500,
   };
 }
