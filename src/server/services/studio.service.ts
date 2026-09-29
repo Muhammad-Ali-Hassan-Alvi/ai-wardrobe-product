@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { cloudinaryConfig } from "@/config/cloudinary";
-import { getAiProvider } from "../ai";
-import { runVirtualTryOn } from "../ai/try-on/virtual-try-on.orchestrator";
-import { GeminiAiProvider } from "../ai/providers/gemini.provider";
+import { getAiProvider, type AnalysisAiProviderName } from "../ai";
 import { createRepositories } from "../db/repositories";
 import type { UploadRecord } from "../db/repositories";
 import { getStorageService } from "../storage";
@@ -141,8 +139,9 @@ export class StudioService {
   private async analyzeOutfit(
     imageUrls: string[],
     garmentDescriptions: string,
+    aiProviderName?: AnalysisAiProviderName,
   ): Promise<OutfitAnalysis> {
-    const ai = getAiProvider();
+    const ai = getAiProvider(aiProviderName);
     const analysisPrompt = `You are a luxury fashion stylist AI for modest Pakistani occasion wear. Analyze these images: a ${SLOT_LABELS.USER_PHOTO} plus ${garmentDescriptions}.
 
 Evaluate how well these uploaded pieces work together as an outfit. Return JSON with:
@@ -152,7 +151,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
 - highlights (3 bullet strengths)
 - colorPalette (4-5 hex colors from the outfit)`;
 
-    if (ai instanceof GeminiAiProvider) {
+    if (ai.analyzeImages) {
       const raw = await ai.analyzeImages(imageUrls, analysisPrompt);
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       return outfitAnalysisSchema.parse(JSON.parse(jsonMatch?.[0] ?? raw));
@@ -186,6 +185,8 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     provider: string;
     previewNote?: string;
   }> {
+    const { runVirtualTryOn } =
+      await import("../ai/try-on/virtual-try-on.orchestrator");
     const tryOnResult = await runVirtualTryOn({
       userPhotoUrl: portrait.secureUrl,
       userPhotoPublicId: portrait.cloudinaryPublicId,
@@ -203,11 +204,14 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
       }
 
       try {
-        const asset = await this.storage.uploadBuffer(tryOnResult.resultBuffer, {
-          folder: `${cloudinaryConfig.folders.tryOn}/${userId}`,
-          publicId: `outfit_${outfitId}`,
-          mimeType: tryOnResult.resultMimeType ?? "image/png",
-        });
+        const asset = await this.storage.uploadBuffer(
+          tryOnResult.resultBuffer,
+          {
+            folder: `${cloudinaryConfig.folders.tryOn}/${userId}`,
+            publicId: `outfit_${outfitId}`,
+            mimeType: tryOnResult.resultMimeType ?? "image/png",
+          },
+        );
 
         return {
           resultImageUrl: asset.url,
@@ -264,20 +268,26 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
     throw new Error("Virtual try-on did not return an image");
   }
 
-  async generateOutfit(userId: string) {
+  async generateOutfit(
+    userId: string,
+    options?: { aiProvider?: AnalysisAiProviderName },
+  ) {
     const inFlight = generationLocks.get(userId);
     if (inFlight) {
       return inFlight as ReturnType<StudioService["runGenerateOutfit"]>;
     }
 
-    const job = this.runGenerateOutfit(userId).finally(() => {
+    const job = this.runGenerateOutfit(userId, options).finally(() => {
       generationLocks.delete(userId);
     });
     generationLocks.set(userId, job);
     return job;
   }
 
-  private async runGenerateOutfit(userId: string) {
+  private async runGenerateOutfit(
+    userId: string,
+    options?: { aiProvider?: AnalysisAiProviderName },
+  ) {
     const uploads = await this.repos.upload.findByUserId(userId);
     const portrait = uploads.find((u) => u.slot === "USER_PHOTO");
     if (!portrait) {
@@ -308,7 +318,12 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         .map((g) => labelForUpload(g))
         .join(", ");
 
-      const analysis = await this.analyzeOutfit(imageUrls, garmentDescriptions);
+      const analysisAi = getAiProvider(options?.aiProvider);
+      const analysis = await this.analyzeOutfit(
+        imageUrls,
+        garmentDescriptions,
+        options?.aiProvider,
+      );
 
       const tryOnImage = await this.resolveTryOnImage(
         userId,
@@ -332,7 +347,7 @@ Evaluate how well these uploaded pieces work together as an outfit. Return JSON 
         colorPalette: analysis.colorPalette,
         resultImageUrl: tryOnImage.resultImageUrl,
         resultPublicId: tryOnImage.resultPublicId,
-        aiProvider: `${getAiProvider().name}+${tryOnImage.provider}`,
+        aiProvider: `${analysisAi.name}+${tryOnImage.provider}`,
         processingMs,
       });
     } catch (error) {
